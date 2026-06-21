@@ -30,15 +30,3 @@ export const FIGMA_LAYOUT = {
   /** Navbar height — mobile */
   navbarHeightMobile: "72px",
 };
-
-export const HERO_CONTENT = {
-  mottoLines: ["Stay", "Informed,", "Stay Inspired"],
-  subtext:
-    "Discover a World of Knowledge at Your Fingertips. Your Daily Dose of Inspiration and Information.",
-  authorLabel: "-Author",
-  authorName: "Thompson P.",
-  authorBio: [
-    "I am a pet enthusiast and freelance writer who specializes in animal behavior and care. With a deep love for cats, I enjoy sharing insights on feline companionship and wellness.",
-    "When i'm not writing, I spends time volunteering at my local animal shelter, helping cats find loving homes.",
-  ],
-};

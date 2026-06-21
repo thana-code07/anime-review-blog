@@ -1,13 +1,11 @@
-import { logoImage } from "../../constants/assets";
-
 export function Logo({ className = "" }) {
   return (
     <a
       href="#"
-      className={`inline-flex shrink-0 no-underline ${className}`}
-      aria-label="hh. home"
+      className={`inline-flex shrink-0 font-poppins text-xl font-semibold leading-none text-brown-900 no-underline sm:text-2xl ${className}`}
+      aria-label="Best Thana home"
     >
-      <img src={logoImage} alt="hh." className="h-7 w-auto sm:h-8" />
+      Best Thana<span className="text-green-500">.</span>
     </a>
   );
 }
