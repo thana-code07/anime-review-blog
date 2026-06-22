@@ -1,5 +1,5 @@
-import { Navbar } from "../components/layout";
-import { HeroSection } from "../components/hero";
+import { Navbar } from "../components/Navbar.jsx";
+import { HeroSection } from "../components/HeroSection.jsx";
 
 export function LandingPage() {
   return (

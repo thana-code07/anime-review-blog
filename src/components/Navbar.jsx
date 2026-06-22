@@ -1,9 +1,9 @@
-import { Logo } from "../ui/Logo";
-import { Button } from "../ui/Button";
+import { Logo } from "./ui/Logo";
+import { Button } from "./ui/Button";
 
 export function Navbar() {
   return (
-    <header className="sticky top-0 z-50 border-b border-brown-300 bg-white">
+    <header className="sticky top-0 z-50 bg-white">
       <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 lg:h-20 lg:px-[120px]">
         <Logo />
 
