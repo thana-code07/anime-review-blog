@@ -11,6 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import BlogCard from "@/components/BlogCard";
+import { blogPosts } from "@/components/data/blogPosts";
 
 const CATEGORIES = [
   { value: "highlight", label: "Highlight" },
@@ -95,6 +97,11 @@ export function ArticlesSection() {
           </Tabs>
 
           <ArticleSearchInput value={searchQuery} onChange={setSearchQuery} />
+        </div>
+        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+          {blogPosts.map((post) => {
+            return <BlogCard key={post.id} {...post} />;
+          })}
         </div>
       </div>
     </section>
