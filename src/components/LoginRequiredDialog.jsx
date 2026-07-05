@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 
 import {
@@ -10,6 +11,18 @@ import {
 import { Button } from "@/components/ui/Button";
 
 export function LoginRequiredDialog({ open, onOpenChange }) {
+  const navigate = useNavigate();
+
+  function goToSignUp() {
+    onOpenChange(false);
+    navigate("/signup");
+  }
+
+  function goToLogin() {
+    onOpenChange(false);
+    navigate("/login");
+  }
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="rounded-2xl border-0 p-8 sm:max-w-md">
@@ -28,7 +41,7 @@ export function LoginRequiredDialog({ open, onOpenChange }) {
           <Button
             variant="primary"
             className="w-full rounded-full"
-            onClick={() => onOpenChange(false)}
+            onClick={goToSignUp}
           >
             Create account
           </Button>
@@ -38,7 +51,7 @@ export function LoginRequiredDialog({ open, onOpenChange }) {
             <button
               type="button"
               className="font-semibold text-brown-900 underline underline-offset-2 hover:text-brown-800"
-              onClick={() => onOpenChange(false)}
+              onClick={goToLogin}
             >
               Log in
             </button>

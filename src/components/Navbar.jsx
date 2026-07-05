@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 
+import { useAuth } from "@/contexts/AuthContext";
 import { Logo } from "./ui/Logo";
 import { Button } from "./ui/Button";
 import {
@@ -11,6 +13,11 @@ import {
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const { isLoggedIn, user, logout } = useAuth();
+
+  function closeMenu() {
+    setOpen(false);
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-white">
@@ -19,18 +26,37 @@ export function Navbar() {
           <Logo />
 
           <div className="hidden items-center gap-2 sm:gap-4 md:flex">
-            <Button
-              variant="ghost"
-              className="px-3 py-2 text-sm sm:px-4 sm:text-base"
-            >
-              Log in
-            </Button>
-            <Button
-              variant="primary"
-              className="px-4 py-2.5 text-sm sm:px-6 sm:py-3 sm:text-base"
-            >
-              Sign up
-            </Button>
+            {isLoggedIn ? (
+              <>
+                <span className="text-sm text-brown-600 sm:text-base">
+                  {user.name}
+                </span>
+                <Button
+                  variant="ghost"
+                  className="px-3 py-2 text-sm sm:px-4 sm:text-base"
+                  onClick={logout}
+                >
+                  Log out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  className="px-3 py-2 text-sm sm:px-4 sm:text-base"
+                  asChild
+                >
+                  <Link to="/login">Log in</Link>
+                </Button>
+                <Button
+                  variant="primary"
+                  className="px-4 py-2.5 text-sm sm:px-6 sm:py-3 sm:text-base"
+                  asChild
+                >
+                  <Link to="/signup">Sign up</Link>
+                </Button>
+              </>
+            )}
           </div>
 
           <CollapsibleTrigger asChild className="md:hidden">
@@ -46,12 +72,29 @@ export function Navbar() {
 
         <CollapsibleContent className="border-t border-border md:hidden">
           <div className="flex flex-col gap-3 px-4 py-4">
-            <Button variant="outline" className="w-full">
-              Log in
-            </Button>
-            <Button variant="primary" className="w-full">
-              Sign up
-            </Button>
+            {isLoggedIn ? (
+              <>
+                <span className="text-center text-sm text-brown-600">
+                  {user.name}
+                </span>
+                <Button variant="outline" className="w-full" onClick={logout}>
+                  Log out
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" className="w-full" asChild>
+                  <Link to="/login" onClick={closeMenu}>
+                    Log in
+                  </Link>
+                </Button>
+                <Button variant="primary" className="w-full" asChild>
+                  <Link to="/signup" onClick={closeMenu}>
+                    Sign up
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </CollapsibleContent>
       </Collapsible>

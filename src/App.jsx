@@ -3,7 +3,10 @@ import { Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { BlogPostPage } from "./pages/BlogPostPage";
 import { LandingPage } from "./pages/LandingPage";
+import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
+import { RegistrationSuccessPage } from "./pages/RegistrationSuccessPage";
+import { SignUpPage } from "./pages/SignUpPage";
 
 function App() {
   return (
@@ -11,6 +14,9 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/post/:postId" element={<BlogPostPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/signup/success" element={<RegistrationSuccessPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
       <Toaster position="bottom-right" />
