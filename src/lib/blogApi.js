@@ -13,3 +13,8 @@ export async function fetchPosts({ category, page = 1, limit = 6 } = {}) {
   const { data } = await blogApi.get("/posts", { params });
   return data;
 }
+
+export async function fetchPost(postId) {
+  const { data } = await blogApi.get(`/posts/${postId}`);
+  return data;
+}

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { siGithub, siGoogle } from "simple-icons";
 
 const LINKEDIN_PATH =
@@ -50,12 +51,12 @@ export function FooterSection() {
           </div>
         </div>
 
-        <a
-          href="#"
+        <Link
+          to="/"
           className="text-sm text-brown-800 underline underline-offset-4 hover:text-brown-900 sm:text-base"
         >
           Home page
-        </a>
+        </Link>
       </div>
     </footer>
   );

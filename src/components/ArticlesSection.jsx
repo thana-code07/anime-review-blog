@@ -21,6 +21,7 @@ import BlogCard from "@/components/BlogCard";
 import LoadingSpinner from "@/components/LoadingSpinner";
 
 import { fetchPosts } from "@/lib/blogApi";
+import { formatPostDate } from "@/lib/formatDate";
 
 const CATEGORIES = [
   { value: "highlight", label: "Highlight" },
@@ -31,16 +32,6 @@ const CATEGORIES = [
 
   { value: "general", label: "General" },
 ];
-
-function formatPostDate(isoDate) {
-  return new Date(isoDate).toLocaleDateString("en-GB", {
-    day: "numeric",
-
-    month: "long",
-
-    year: "numeric",
-  });
-}
 
 function formatPosts(posts) {
   return posts.map((post) => ({
@@ -221,7 +212,7 @@ export function ArticlesSection() {
 
           {!isLoading &&
             !error &&
-            posts.map((post) => <BlogCard key={post.id} {...post} />)}
+            posts.map((post) => <BlogCard key={post.id} id={post.id} {...post} />)}
         </div>
 
         {!isLoading && isLoadingMore && (
