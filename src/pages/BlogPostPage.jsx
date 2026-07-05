@@ -9,7 +9,7 @@ import { LoginRequiredDialog } from "@/components/LoginRequiredDialog";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/Button";
-import { isLoggedIn } from "@/lib/auth";
+import { useAuth } from "@/contexts/AuthContext";
 import { fetchPost } from "@/lib/blogApi";
 import { formatLikes, formatPostDate } from "@/lib/formatDate";
 
@@ -96,6 +96,7 @@ function CommentItem({ name, avatar, date, text }) {
 
 export function BlogPostPage() {
   const { postId } = useParams();
+  const { isLoggedIn } = useAuth();
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
