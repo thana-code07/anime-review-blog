@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
+
 import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+
 import { Label } from "@/components/ui/label";
+
 import {
   Select,
   SelectContent,
@@ -10,23 +13,41 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import BlogCard from "@/components/BlogCard";
+
+import LoadingSpinner from "@/components/LoadingSpinner";
+
 import { fetchPosts } from "@/lib/blogApi";
 
 const CATEGORIES = [
   { value: "highlight", label: "Highlight" },
+
   { value: "cat", label: "Cat" },
+
   { value: "inspiration", label: "Inspiration" },
+
   { value: "general", label: "General" },
 ];
 
 function formatPostDate(isoDate) {
   return new Date(isoDate).toLocaleDateString("en-GB", {
     day: "numeric",
+
     month: "long",
+
     year: "numeric",
   });
+}
+
+function formatPosts(posts) {
+  return posts.map((post) => ({
+    ...post,
+
+    date: formatPostDate(post.date),
+  }));
 }
 
 function ArticleSearchInput({ value, onChange, className }) {
@@ -41,6 +62,7 @@ function ArticleSearchInput({ value, onChange, className }) {
           className="h-11 rounded-xl border-brown-300 bg-white pr-10 text-brown-900 placeholder:text-brown-400 focus-visible:border-brown-400 focus-visible:ring-brown-300/30 lg:h-10 lg:w-[280px]"
           aria-label="Search articles"
         />
+
         <Search
           className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-brown-400"
           aria-hidden
@@ -52,9 +74,19 @@ function ArticleSearchInput({ value, onChange, className }) {
 
 export function ArticlesSection() {
   const [category, setCategory] = useState("highlight");
+
   const [searchQuery, setSearchQuery] = useState("");
+
   const [posts, setPosts] = useState([]);
+
+  const [page, setPage] = useState(1);
+
+  const [hasMore, setHasMore] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
+
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -62,21 +94,28 @@ export function ArticlesSection() {
 
     async function loadPosts() {
       setIsLoading(true);
+
       setError(null);
 
+      setPosts([]);
+
+      setPage(1);
+
+      setHasMore(false);
+
       try {
-        const data = await fetchPosts({ category });
+        const data = await fetchPosts({ category, page: 1, limit: 6 });
+
         if (cancelled) return;
 
-        setPosts(
-          data.posts.map((post) => ({
-            ...post,
-            date: formatPostDate(post.date),
-          })),
-        );
+        setPosts(formatPosts(data.posts));
+
+        setHasMore(data.nextPage != null);
       } catch {
         if (cancelled) return;
+
         setPosts([]);
+
         setError("Failed to load articles.");
       } finally {
         if (!cancelled) {
@@ -91,6 +130,30 @@ export function ArticlesSection() {
       cancelled = true;
     };
   }, [category]);
+
+  async function handleLoadMore() {
+    if (isLoadingMore || !hasMore) return;
+
+    setIsLoadingMore(true);
+
+    setError(null);
+
+    try {
+      const nextPage = page + 1;
+
+      const data = await fetchPosts({ category, page: nextPage, limit: 6 });
+
+      setPosts((prev) => [...prev, ...formatPosts(data.posts)]);
+
+      setPage(nextPage);
+
+      setHasMore(data.nextPage != null);
+    } catch {
+      setError("Failed to load more articles.");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }
 
   return (
     <section className="w-full bg-brown-200" aria-label="Latest articles">
@@ -109,6 +172,7 @@ export function ArticlesSection() {
             >
               Category
             </Label>
+
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger
                 id="article-category"
@@ -116,6 +180,7 @@ export function ArticlesSection() {
               >
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
+
               <SelectContent>
                 {CATEGORIES.map(({ value, label }) => (
                   <SelectItem key={value} value={value}>
@@ -147,15 +212,35 @@ export function ArticlesSection() {
 
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
           {isLoading && (
-            <p className="col-span-full text-brown-600">Loading...</p>
+            <div className="col-span-full flex justify-center py-16">
+              <LoadingSpinner />
+            </div>
           )}
-          {error && (
-            <p className="col-span-full text-red-600">{error}</p>
-          )}
+
+          {error && <p className="col-span-full text-red-600">{error}</p>}
+
           {!isLoading &&
             !error &&
             posts.map((post) => <BlogCard key={post.id} {...post} />)}
         </div>
+
+        {!isLoading && isLoadingMore && (
+          <div className="mt-10 flex justify-center">
+            <LoadingSpinner />
+          </div>
+        )}
+
+        {!isLoading && !isLoadingMore && hasMore && (
+          <div className="mt-10 flex justify-center">
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              className="rounded-xl bg-white px-10 py-3 text-brown-900 underline hover:text-brown-600 cursor-pointer"
+            >
+              View more
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
