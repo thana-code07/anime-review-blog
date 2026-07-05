@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { Heart, Link2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { FooterSection } from "@/components/FooterSection";
 import { LoginRequiredDialog } from "@/components/LoginRequiredDialog";
@@ -81,7 +82,6 @@ export function BlogPostPage() {
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [copied, setCopied] = useState(false);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
 
@@ -125,10 +125,13 @@ export function BlogPostPage() {
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      toast.success("Copied!", {
+        description: "This article has been copied to your clipboard.",
+      });
     } catch {
-      setCopied(false);
+      toast.error("Failed to copy link", {
+        description: "Please try again or copy the URL manually.",
+      });
     }
   }
 
@@ -195,7 +198,7 @@ export function BlogPostPage() {
                       className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brown-300 bg-white px-4 py-2 text-sm text-brown-900 transition-colors hover:bg-brown-100"
                     >
                       <Link2 className="size-4" />
-                      <span>{copied ? "Copied!" : "Copy link"}</span>
+                      <span>Copy link</span>
                     </button>
 
                     <SocialShareButton label="Share on Facebook" className="bg-[#1877F2]">
