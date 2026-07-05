@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
 
-import { Search } from "lucide-react";
-
-import { Input } from "@/components/ui/input";
-
 import { Label } from "@/components/ui/label";
 
 import {
@@ -17,6 +13,8 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import BlogCard from "@/components/BlogCard";
+
+import { ArticleSearch } from "@/components/ArticleSearch";
 
 import LoadingSpinner from "@/components/LoadingSpinner";
 
@@ -41,32 +39,8 @@ function formatPosts(posts) {
   }));
 }
 
-function ArticleSearchInput({ value, onChange, className }) {
-  return (
-    <div className={className}>
-      <div className="relative">
-        <Input
-          type="search"
-          placeholder="Search"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="h-11 rounded-xl border-brown-300 bg-white pr-10 text-brown-900 placeholder:text-brown-400 focus-visible:border-brown-400 focus-visible:ring-brown-300/30 lg:h-10 lg:w-[280px]"
-          aria-label="Search articles"
-        />
-
-        <Search
-          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-brown-400"
-          aria-hidden
-        />
-      </div>
-    </div>
-  );
-}
-
 export function ArticlesSection() {
   const [category, setCategory] = useState("highlight");
-
-  const [searchQuery, setSearchQuery] = useState("");
 
   const [posts, setPosts] = useState([]);
 
@@ -154,7 +128,7 @@ export function ArticlesSection() {
         </h2>
 
         <div className="mt-6 flex flex-col gap-4 lg:hidden">
-          <ArticleSearchInput value={searchQuery} onChange={setSearchQuery} />
+          <ArticleSearch />
 
           <div className="flex flex-col gap-2">
             <Label
@@ -198,7 +172,7 @@ export function ArticlesSection() {
             </TabsList>
           </Tabs>
 
-          <ArticleSearchInput value={searchQuery} onChange={setSearchQuery} />
+          <ArticleSearch />
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
