@@ -4,9 +4,11 @@ import ReactMarkdown from "react-markdown";
 import { Heart, Link2 } from "lucide-react";
 
 import { FooterSection } from "@/components/FooterSection";
+import { LoginRequiredDialog } from "@/components/LoginRequiredDialog";
 import LoadingSpinner from "@/components/LoadingSpinner";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/Button";
+import { isLoggedIn } from "@/lib/auth";
 import { fetchPost } from "@/lib/blogApi";
 import { formatLikes, formatPostDate } from "@/lib/formatDate";
 
@@ -80,6 +82,16 @@ export function BlogPostPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+  const [commentText, setCommentText] = useState("");
+
+  function requireAuth(action) {
+    if (!isLoggedIn) {
+      setIsLoginDialogOpen(true);
+      return;
+    }
+    action();
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -165,6 +177,11 @@ export function BlogPostPage() {
                 <div className="mt-10 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-brown-200 px-4 py-3 sm:px-5">
                   <button
                     type="button"
+                    onClick={() =>
+                      requireAuth(() => {
+                        // Future: toggle like / increment count
+                      })
+                    }
                     className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brown-300 bg-white px-4 py-2 text-sm text-brown-900 transition-colors hover:bg-brown-100"
                   >
                     <Heart className="size-4" />
@@ -203,11 +220,20 @@ export function BlogPostPage() {
                   <textarea
                     placeholder="What are your thoughts?"
                     rows={4}
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
                     className="w-full resize-none rounded-xl border border-brown-300 bg-white px-4 py-3 text-brown-900 placeholder:text-brown-400 focus:border-brown-400 focus:outline-none"
-                    readOnly
                   />
                   <div className="mt-4 flex justify-end">
-                    <Button variant="primary" className="rounded-full px-8">
+                    <Button
+                      variant="primary"
+                      className="rounded-full px-8"
+                      onClick={() =>
+                        requireAuth(() => {
+                          // Future: add comment and clear textarea
+                        })
+                      }
+                    >
                       Send
                     </Button>
                   </div>
@@ -240,6 +266,11 @@ export function BlogPostPage() {
       </main>
 
       <FooterSection />
+
+      <LoginRequiredDialog
+        open={isLoginDialogOpen}
+        onOpenChange={setIsLoginDialogOpen}
+      />
     </div>
   );
 }
