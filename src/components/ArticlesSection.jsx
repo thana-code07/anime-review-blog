@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import BlogCard from "@/components/BlogCard";
-import { blogPosts } from "@/components/data/blogPosts";
+import { fetchPosts } from "@/lib/blogApi";
 
 const CATEGORIES = [
   { value: "highlight", label: "Highlight" },
@@ -20,6 +20,14 @@ const CATEGORIES = [
   { value: "inspiration", label: "Inspiration" },
   { value: "general", label: "General" },
 ];
+
+function formatPostDate(isoDate) {
+  return new Date(isoDate).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
 
 function ArticleSearchInput({ value, onChange, className }) {
   return (
@@ -45,6 +53,44 @@ function ArticleSearchInput({ value, onChange, className }) {
 export function ArticlesSection() {
   const [category, setCategory] = useState("highlight");
   const [searchQuery, setSearchQuery] = useState("");
+  const [posts, setPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPosts() {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const data = await fetchPosts({ category });
+        if (cancelled) return;
+
+        setPosts(
+          data.posts.map((post) => ({
+            ...post,
+            date: formatPostDate(post.date),
+          })),
+        );
+      } catch {
+        if (cancelled) return;
+        setPosts([]);
+        setError("Failed to load articles.");
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadPosts();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [category]);
 
   return (
     <section className="w-full bg-brown-200" aria-label="Latest articles">
@@ -98,10 +144,17 @@ export function ArticlesSection() {
 
           <ArticleSearchInput value={searchQuery} onChange={setSearchQuery} />
         </div>
+
         <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-          {blogPosts.map((post) => {
-            return <BlogCard key={post.id} {...post} />;
-          })}
+          {isLoading && (
+            <p className="col-span-full text-brown-600">Loading...</p>
+          )}
+          {error && (
+            <p className="col-span-full text-red-600">{error}</p>
+          )}
+          {!isLoading &&
+            !error &&
+            posts.map((post) => <BlogCard key={post.id} {...post} />)}
         </div>
       </div>
     </section>
