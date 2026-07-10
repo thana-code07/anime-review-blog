@@ -186,7 +186,9 @@ export function ArticlesSection() {
 
           {!isLoading &&
             !error &&
-            posts.map((post) => <BlogCard key={post.id} id={post.id} {...post} />)}
+            posts.map((post) => (
+              <BlogCard key={post.id} id={post.id} {...post} />
+            ))}
         </div>
 
         {!isLoading && isLoadingMore && (

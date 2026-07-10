@@ -94,14 +94,34 @@ function CommentItem({ name, avatar, date, text }) {
   );
 }
 
+function likedPostsKey(email) {
+  return `likedPosts:${email}`;
+}
+
+function getLikedPostIds(email) {
+  if (!email) return [];
+  try {
+    const raw = localStorage.getItem(likedPostsKey(email));
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+function setLikedPostIds(email, postIds) {
+  localStorage.setItem(likedPostsKey(email), JSON.stringify(postIds));
+}
+
 export function BlogPostPage() {
   const { postId } = useParams();
-  const { isLoggedIn } = useAuth();
+  const { user, isLoggedIn } = useAuth();
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [liked, setLiked] = useState(false);
 
   function requireAuth(action) {
     if (!isLoggedIn) {
@@ -140,13 +160,42 @@ export function BlogPostPage() {
     };
   }, [postId]);
 
+  useEffect(() => {
+    if (!user?.email || !postId) {
+      setLiked(false);
+      return;
+    }
+    setLiked(getLikedPostIds(user.email).includes(String(postId)));
+  }, [user?.email, postId]);
+
   const articleUrl = window.location.href;
+
+  function handleLike() {
+    if (!user?.email) return;
+
+    const id = String(postId);
+    const likedIds = getLikedPostIds(user.email);
+    const nextLiked = !likedIds.includes(id);
+    const nextIds = nextLiked
+      ? [...likedIds, id]
+      : likedIds.filter((likedId) => likedId !== id);
+
+    setLikedPostIds(user.email, nextIds);
+    setLiked(nextLiked);
+  }
 
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(articleUrl);
       toast.success("Copied!", {
         description: "This article has been copied to your clipboard.",
+        classNames: {
+          toast: "bg-[#31dc70] text-white border-none",
+          title: "text-white font-bold text-lg",
+          description: "!text-white text-[15px] leading-normal",
+          closeButton:
+            "!bg-transparent !border-none !text-white !shadow-none !left-auto !right-3 !top-3 !transform-none rounded",
+        },
       });
     } catch {
       toast.error("Failed to copy link", {
@@ -198,15 +247,16 @@ export function BlogPostPage() {
                 <div className="mt-10 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-brown-200 px-4 py-3 sm:px-5">
                   <button
                     type="button"
-                    onClick={() =>
-                      requireAuth(() => {
-                        // Future: toggle like / increment count
-                      })
-                    }
+                    onClick={() => requireAuth(handleLike)}
+                    aria-pressed={liked}
                     className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brown-300 bg-white px-4 py-2 text-sm text-brown-900 transition-colors hover:bg-brown-100"
                   >
-                    <Heart className="size-4" />
-                    <span>{formatLikes(post.likes)}</span>
+                    <Heart
+                      className={`size-4 ${liked ? "fill-red-500 text-red-500" : ""}`}
+                    />
+                    <span>
+                      {formatLikes((post.likes ?? 0) + (liked ? 1 : 0))}
+                    </span>
                   </button>
 
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">
