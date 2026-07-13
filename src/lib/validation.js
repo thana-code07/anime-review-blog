@@ -51,3 +51,41 @@ export function validateLoginForm({ email, password }) {
 
   return errors;
 }
+
+export function validateConfirmPassword(password, confirmPassword) {
+  if (!confirmPassword) return "Please confirm your new password";
+  if (password !== confirmPassword) return "Passwords do not match";
+  return null;
+}
+
+export function validateProfileForm({ name, username }) {
+  const errors = {};
+
+  const nameError = validateName(name);
+  if (nameError) errors.name = nameError;
+
+  const usernameError = validateUsername(username);
+  if (usernameError) errors.username = usernameError;
+
+  return errors;
+}
+
+export function validateResetPasswordForm({
+  currentPassword,
+  newPassword,
+  confirmPassword,
+}) {
+  const errors = {};
+
+  if (!currentPassword) {
+    errors.currentPassword = "Current password is required";
+  }
+
+  const newPasswordError = validatePassword(newPassword);
+  if (newPasswordError) errors.newPassword = newPasswordError;
+
+  const confirmError = validateConfirmPassword(newPassword, confirmPassword);
+  if (confirmError) errors.confirmPassword = confirmError;
+
+  return errors;
+}

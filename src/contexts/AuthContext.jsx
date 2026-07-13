@@ -1,10 +1,12 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
 import {
+  changePassword as changePasswordUser,
   getCurrentUser,
   loginUser,
   logoutUser,
   registerUser,
+  updateProfile as updateProfileUser,
 } from "@/lib/auth";
 
 const AuthContext = createContext(null);
@@ -30,6 +32,18 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const updateProfile = useCallback((profile) => {
+    const result = updateProfileUser(profile);
+    if (result.success) {
+      setUser(result.user);
+    }
+    return result;
+  }, []);
+
+  const changePassword = useCallback((passwords) => {
+    return changePasswordUser(passwords);
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -37,8 +51,10 @@ export function AuthProvider({ children }) {
       register,
       login,
       logout,
+      updateProfile,
+      changePassword,
     }),
-    [user, register, login, logout],
+    [user, register, login, logout, updateProfile, changePassword],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

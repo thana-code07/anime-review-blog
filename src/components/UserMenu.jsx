@@ -12,12 +12,12 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const DEFAULT_AVATAR = "/default-avatar.png";
 
-function Avatar({ size = "md", alt }) {
+function Avatar({ size = "md", alt, src }) {
   const sizeClass = size === "lg" ? "size-12" : "size-10";
 
   return (
     <img
-      src={DEFAULT_AVATAR}
+      src={src || DEFAULT_AVATAR}
       alt={alt}
       className={`${sizeClass} shrink-0 rounded-full object-cover`}
     />
@@ -88,7 +88,7 @@ function MobileUserMenu({ onNavigate }) {
   return (
     <div className="flex flex-col">
       <div className="flex items-center gap-3 px-4 py-3">
-        <Avatar size="lg" alt="" />
+        <Avatar size="lg" alt="" src={user.avatar} />
         <span className="min-w-0 flex-1 truncate text-base font-medium text-brown-800">
           {user.name}
         </span>
@@ -142,7 +142,7 @@ function DesktopUserMenu() {
           aria-haspopup="menu"
           onClick={() => setOpen((prev) => !prev)}
         >
-          <Avatar alt="" />
+          <Avatar alt="" src={user.avatar} />
           <span className="max-w-[140px] truncate text-base">{user.name}</span>
           <ChevronDown
             className={`size-4 shrink-0 stroke-[1.5] transition-transform ${open ? "rotate-180" : ""}`}
