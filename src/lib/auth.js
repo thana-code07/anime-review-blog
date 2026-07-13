@@ -14,6 +14,15 @@ function writeJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function toSessionUser(user) {
+  return {
+    name: user.name,
+    username: user.username,
+    email: user.email,
+    avatar: user.avatar ?? null,
+  };
+}
+
 export function getRegisteredUsers() {
   return readJson(USERS_KEY, []);
 }
@@ -44,11 +53,12 @@ export function registerUser({ name, username, email, password }) {
     username: username.trim(),
     email: normalizedEmail,
     password,
+    avatar: null,
   };
 
   writeJson(USERS_KEY, [...users, newUser]);
 
-  return { success: true, user: { name: newUser.name, username: newUser.username, email: newUser.email } };
+  return { success: true, user: toSessionUser(newUser) };
 }
 
 export function loginUser({ email, password }) {
@@ -62,11 +72,7 @@ export function loginUser({ email, password }) {
     return { success: false, message: "Invalid email or password" };
   }
 
-  const sessionUser = {
-    name: user.name,
-    username: user.username,
-    email: user.email,
-  };
+  const sessionUser = toSessionUser(user);
 
   writeJson(SESSION_KEY, sessionUser);
 
@@ -75,4 +81,82 @@ export function loginUser({ email, password }) {
 
 export function logoutUser() {
   localStorage.removeItem(SESSION_KEY);
+}
+
+export function updateProfile({ name, username, avatar }) {
+  const session = getCurrentUser();
+  if (!session) {
+    return { success: false, message: "You must be logged in" };
+  }
+
+  const users = getRegisteredUsers();
+  const index = users.findIndex(
+    (u) => u.email.toLowerCase() === session.email.toLowerCase(),
+  );
+
+  if (index === -1) {
+    return { success: false, message: "User not found" };
+  }
+
+  const trimmedUsername = username.trim();
+  const normalizedUsername = trimmedUsername.toLowerCase();
+
+  const usernameTaken = users.some(
+    (u, i) =>
+      i !== index && u.username.toLowerCase() === normalizedUsername,
+  );
+
+  if (usernameTaken) {
+    return {
+      success: false,
+      field: "username",
+      message: "Username is already taken",
+    };
+  }
+
+  const updatedUser = {
+    ...users[index],
+    name: name.trim(),
+    username: trimmedUsername,
+    avatar: avatar === undefined ? (users[index].avatar ?? null) : avatar,
+  };
+
+  const nextUsers = [...users];
+  nextUsers[index] = updatedUser;
+  writeJson(USERS_KEY, nextUsers);
+
+  const sessionUser = toSessionUser(updatedUser);
+  writeJson(SESSION_KEY, sessionUser);
+
+  return { success: true, user: sessionUser };
+}
+
+export function changePassword({ currentPassword, newPassword }) {
+  const session = getCurrentUser();
+  if (!session) {
+    return { success: false, message: "You must be logged in" };
+  }
+
+  const users = getRegisteredUsers();
+  const index = users.findIndex(
+    (u) => u.email.toLowerCase() === session.email.toLowerCase(),
+  );
+
+  if (index === -1) {
+    return { success: false, message: "User not found" };
+  }
+
+  if (users[index].password !== currentPassword) {
+    return {
+      success: false,
+      field: "currentPassword",
+      message: "Current password is incorrect",
+    };
+  }
+
+  const nextUsers = [...users];
+  nextUsers[index] = { ...users[index], password: newPassword };
+  writeJson(USERS_KEY, nextUsers);
+
+  return { success: true };
 }
