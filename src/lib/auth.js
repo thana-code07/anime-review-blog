@@ -20,7 +20,45 @@ function toSessionUser(user) {
     username: user.username,
     email: user.email,
     avatar: user.avatar ?? null,
+    role: user.role === "admin" ? "admin" : "user",
   };
+}
+
+const ADMIN_EMAIL = "best@gmail.com";
+const ADMIN_PASSWORD = "123456";
+
+export function ensureAdminUser() {
+  const users = getRegisteredUsers();
+  const index = users.findIndex(
+    (u) => u.email.toLowerCase() === ADMIN_EMAIL,
+  );
+
+  const adminUser = {
+    name: "Thompson P.",
+    username: "admin",
+    email: ADMIN_EMAIL,
+    password: ADMIN_PASSWORD,
+    avatar: null,
+    role: "admin",
+  };
+
+  if (index === -1) {
+    writeJson(USERS_KEY, [...users, adminUser]);
+    return;
+  }
+
+  const nextUsers = [...users];
+  nextUsers[index] = {
+    ...nextUsers[index],
+    password: ADMIN_PASSWORD,
+    role: "admin",
+  };
+  writeJson(USERS_KEY, nextUsers);
+
+  const session = getCurrentUser();
+  if (session?.email?.toLowerCase() === ADMIN_EMAIL) {
+    writeJson(SESSION_KEY, toSessionUser(nextUsers[index]));
+  }
 }
 
 export function getRegisteredUsers() {
@@ -54,6 +92,7 @@ export function registerUser({ name, username, email, password }) {
     email: normalizedEmail,
     password,
     avatar: null,
+    role: "user",
   };
 
   writeJson(USERS_KEY, [...users, newUser]);

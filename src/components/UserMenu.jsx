@@ -5,6 +5,7 @@ import {
   ChevronDown,
   LogOut,
   RotateCcw,
+  SquareArrowOutUpRight,
   User,
 } from "lucide-react";
 
@@ -59,7 +60,7 @@ function MenuItem({ to, icon: Icon, children, onClick }) {
   );
 }
 
-function MenuLinks({ onNavigate, onLogout }) {
+function MenuLinks({ onNavigate, onLogout, isAdmin }) {
   return (
     <nav className="flex flex-col" aria-label="Account">
       <MenuItem to="/profile" icon={User} onClick={onNavigate}>
@@ -68,6 +69,15 @@ function MenuLinks({ onNavigate, onLogout }) {
       <MenuItem to="/reset-password" icon={RotateCcw} onClick={onNavigate}>
         Reset password
       </MenuItem>
+      {isAdmin && (
+        <MenuItem
+          to="/admin/articles"
+          icon={SquareArrowOutUpRight}
+          onClick={onNavigate}
+        >
+          Admin panel
+        </MenuItem>
+      )}
       <div className="mx-4 border-t border-brown-300" role="separator" />
       <MenuItem
         icon={LogOut}
@@ -83,7 +93,7 @@ function MenuLinks({ onNavigate, onLogout }) {
 }
 
 function MobileUserMenu({ onNavigate }) {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
 
   return (
     <div className="flex flex-col">
@@ -94,13 +104,13 @@ function MobileUserMenu({ onNavigate }) {
         </span>
         <NotificationBell />
       </div>
-      <MenuLinks onNavigate={onNavigate} onLogout={logout} />
+      <MenuLinks onNavigate={onNavigate} onLogout={logout} isAdmin={isAdmin} />
     </div>
   );
 }
 
 function DesktopUserMenu() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -155,7 +165,7 @@ function DesktopUserMenu() {
             role="menu"
             className="absolute top-[calc(100%+8px)] right-0 z-50 min-w-[220px] overflow-hidden rounded-xl border border-brown-300 bg-white py-1 shadow-md"
           >
-            <MenuLinks onNavigate={close} onLogout={logout} />
+            <MenuLinks onNavigate={close} onLogout={logout} isAdmin={isAdmin} />
           </div>
         )}
       </div>

@@ -1,7 +1,11 @@
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AccountLayout } from "@/components/AccountLayout";
+import { AdminLayout } from "@/components/AdminLayout";
 import { Toaster } from "@/components/ui/sonner";
+import { AdminArticleFormPage } from "./pages/admin/AdminArticleFormPage";
+import { AdminArticlesPage } from "./pages/admin/AdminArticlesPage";
+import { AdminCategoriesPage } from "./pages/admin/AdminCategoriesPage";
 import { BlogPostPage } from "./pages/BlogPostPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -23,6 +27,16 @@ function App() {
         <Route element={<AccountLayout />}>
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+        </Route>
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<Navigate to="/admin/articles" replace />} />
+          <Route path="/admin/articles" element={<AdminArticlesPage />} />
+          <Route path="/admin/articles/new" element={<AdminArticleFormPage />} />
+          <Route
+            path="/admin/articles/:articleId/edit"
+            element={<AdminArticleFormPage />}
+          />
+          <Route path="/admin/categories" element={<AdminCategoriesPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

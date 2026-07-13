@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useMemo, useState } from "react
 
 import {
   changePassword as changePasswordUser,
+  ensureAdminUser,
   getCurrentUser,
   loginUser,
   logoutUser,
@@ -12,7 +13,10 @@ import {
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => getCurrentUser());
+  const [user, setUser] = useState(() => {
+    ensureAdminUser();
+    return getCurrentUser();
+  });
 
   const register = useCallback((credentials) => {
     const result = registerUser(credentials);
@@ -48,6 +52,7 @@ export function AuthProvider({ children }) {
     () => ({
       user,
       isLoggedIn: user !== null,
+      isAdmin: user?.role === "admin",
       register,
       login,
       logout,
