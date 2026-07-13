@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 import { validateLoginForm } from "@/lib/validation";
 
 const inputClassName =
@@ -29,13 +31,13 @@ export function LoginPage() {
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
-  const [formError, setFormError] = useState("");
+  const [authFailed, setAuthFailed] = useState(false);
 
   function handleChange(field) {
     return (event) => {
       setForm((prev) => ({ ...prev, [field]: event.target.value }));
       setErrors((prev) => ({ ...prev, [field]: undefined }));
-      setFormError("");
+      setAuthFailed(false);
     };
   }
 
@@ -50,12 +52,24 @@ export function LoginPage() {
 
     const result = login(form);
     if (!result.success) {
-      setFormError(result.message);
+      setAuthFailed(true);
+      toast.error("Your password is incorrect or this email doesn't exist", {
+        description: "Please try another password or email",
+        classNames: {
+          toast: "bg-[#f87171] text-white border-none",
+          title: "text-white font-bold text-lg",
+          description: "!text-white text-[15px] leading-normal",
+          closeButton:
+            "!bg-transparent !border-none !text-white !shadow-none !left-auto !right-3 !top-3 !transform-none rounded",
+        },
+      });
       return;
     }
 
     navigate("/");
   }
+
+  const inputErrorClassName = authFailed ? "text-destructive" : undefined;
 
   return (
     <div className="min-h-svh bg-brown-100">
@@ -75,8 +89,8 @@ export function LoginPage() {
                 placeholder="Email"
                 value={form.email}
                 onChange={handleChange("email")}
-                aria-invalid={!!errors.email}
-                className={inputClassName}
+                aria-invalid={!!errors.email || authFailed}
+                className={cn(inputClassName, inputErrorClassName)}
               />
             </FormField>
 
@@ -87,14 +101,10 @@ export function LoginPage() {
                 placeholder="Password"
                 value={form.password}
                 onChange={handleChange("password")}
-                aria-invalid={!!errors.password}
-                className={inputClassName}
+                aria-invalid={!!errors.password || authFailed}
+                className={cn(inputClassName, inputErrorClassName)}
               />
             </FormField>
-
-            {formError && (
-              <p className="text-center text-sm text-destructive">{formError}</p>
-            )}
 
             <Button type="submit" variant="primary" className="mt-2 w-full">
               Log in

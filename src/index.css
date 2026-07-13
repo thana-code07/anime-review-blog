@@ -255,6 +255,12 @@
   color: #fff;
 }
 
+[data-sonner-toaster] [data-sonner-toast].sonner-toast-error {
+  background-color: #f87171;
+  border: none;
+  color: #fff;
+}
+
 [data-sonner-toaster] [data-sonner-toast] .sonner-toast-title {
   font-weight: 700;
   font-size: 14px;
