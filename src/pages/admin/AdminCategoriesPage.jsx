@@ -9,6 +9,7 @@ const MOCK_CATEGORIES = [
   { id: "4", name: "Highlight", articleCount: 3 },
 ];
 
+// admin categories list (mock data)
 export function AdminCategoriesPage() {
   return (
     <div className="px-6 py-8 sm:px-10 lg:px-12">

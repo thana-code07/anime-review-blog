@@ -11,4 +11,5 @@ function LoadingSpinner() {
   );
 }
 
+// full-page loading spinner
 export default LoadingSpinner;

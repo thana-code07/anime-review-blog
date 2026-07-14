@@ -37,6 +37,7 @@ function FormField({ id, label, error, children }) {
   );
 }
 
+// change password form for logged-in users
 export function ResetPasswordPage() {
   const { changePassword } = useAuth();
   const [form, setForm] = useState(emptyForm);

@@ -38,6 +38,7 @@ function SocialIcon({ href, label, path }) {
   );
 }
 
+// site footer with brand, links, and social icons
 export function FooterSection() {
   return (
     <footer className="w-full bg-brown-200" aria-label="Site footer">

@@ -113,6 +113,7 @@ function setLikedPostIds(email, postIds) {
   localStorage.setItem(likedPostsKey(email), JSON.stringify(postIds));
 }
 
+// single article page with likes, share, and comments
 export function BlogPostPage() {
   const { postId } = useParams();
   const { user, isLoggedIn } = useAuth();

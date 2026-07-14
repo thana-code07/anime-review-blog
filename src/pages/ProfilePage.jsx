@@ -33,6 +33,7 @@ function FormField({ id, label, error, children }) {
   );
 }
 
+// edit profile name, username, and avatar
 export function ProfilePage() {
   const { user, updateProfile } = useAuth();
   const fileInputRef = useRef(null);

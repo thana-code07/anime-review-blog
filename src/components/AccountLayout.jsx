@@ -43,6 +43,7 @@ function AccountNavLink({ to, label, icon: Icon, variant }) {
   );
 }
 
+// account pages shell with profile sidebar and outlet
 export function AccountLayout() {
   const { user, isLoggedIn } = useAuth();
   const location = useLocation();

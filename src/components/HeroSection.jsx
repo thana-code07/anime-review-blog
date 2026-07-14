@@ -1,5 +1,6 @@
 import heroImage from "../assets/hero-section-picture.jpg";
 
+// landing page hero with headline and call to action
 export function HeroSection() {
   return (
     <section className="w-full bg-brown-100" aria-label="Featured article">

@@ -52,6 +52,7 @@ function StatusBadge({ status }) {
   );
 }
 
+// admin list of articles with search, status, and delete
 export function AdminArticlesPage() {
   const navigate = useNavigate();
   const [articles, setArticles] = useState(() => getArticles());

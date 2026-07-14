@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/Button";
 
+// confirm dialog before deleting an admin article
 export function DeleteArticleDialog({ open, onOpenChange, onConfirm }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

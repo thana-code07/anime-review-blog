@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/Button";
 
+// success screen after sign up with link to login
 export function RegistrationSuccessPage() {
   const navigate = useNavigate();
 

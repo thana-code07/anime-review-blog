@@ -23,6 +23,7 @@ function FormField({ id, label, error, children }) {
   );
 }
 
+// registration form for new users
 export function SignUpPage() {
   const navigate = useNavigate();
   const { register } = useAuth();

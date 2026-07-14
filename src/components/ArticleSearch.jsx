@@ -8,6 +8,7 @@ import { fetchPosts } from "@/lib/blogApi";
 
 const DEBOUNCE_MS = 300;
 
+// debounced keyword search input for filtering articles
 export function ArticleSearch({ className }) {
   const listboxId = useId();
   const containerRef = useRef(null);

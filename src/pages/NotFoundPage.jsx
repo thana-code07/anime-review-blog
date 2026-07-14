@@ -5,6 +5,7 @@ import { Navbar } from "../components/Navbar.jsx";
 import { FooterSection } from "../components/FooterSection.jsx";
 import { Button } from "../components/ui/Button.jsx";
 
+// 404 page when a route is not found
 export function NotFoundPage() {
   return (
     <div className="flex min-h-svh flex-col bg-brown-100">

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/Button";
 
+// dialog prompting guests to log in before continuing
 export function LoginRequiredDialog({ open, onOpenChange }) {
   const navigate = useNavigate();
 

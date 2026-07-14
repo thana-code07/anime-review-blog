@@ -173,6 +173,7 @@ function DesktopUserMenu() {
   );
 }
 
+//user menu for edit profile and reset password and admin panel and logout
 export function UserMenu({ variant = "desktop", onNavigate }) {
   if (variant === "mobile") {
     return <MobileUserMenu onNavigate={onNavigate} />;

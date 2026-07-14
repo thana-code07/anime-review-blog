@@ -1,6 +1,8 @@
 const ARTICLES_KEY = "adminArticles";
 
+// allowed article category options
 export const ARTICLE_CATEGORIES = ["Cat", "General", "Inspiration"];
+// allowed article status options
 export const ARTICLE_STATUSES = ["Published", "Draft"];
 
 const SEED_ARTICLES = [
@@ -107,10 +109,12 @@ function ensureSeeded() {
   return existing;
 }
 
+// read all admin articles from localStorage
 export function getArticles() {
   return ensureSeeded();
 }
 
+// read one admin article by id
 export function getArticle(id) {
   return getArticles().find((article) => String(article.id) === String(id)) ?? null;
 }
@@ -123,6 +127,7 @@ function nextId(articles) {
   return String(maxId + 1);
 }
 
+// create a new admin article in localStorage
 export function createArticle(data) {
   const articles = getArticles();
   const article = {
@@ -140,6 +145,7 @@ export function createArticle(data) {
   return article;
 }
 
+// update an existing admin article in localStorage
 export function updateArticle(id, data) {
   const articles = getArticles();
   const index = articles.findIndex(
@@ -177,6 +183,7 @@ export function updateArticle(id, data) {
   return updated;
 }
 
+// delete an admin article from localStorage
 export function deleteArticle(id) {
   const articles = getArticles();
   const next = articles.filter(

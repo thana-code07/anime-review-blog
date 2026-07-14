@@ -27,6 +27,7 @@ function toSessionUser(user) {
 const ADMIN_EMAIL = "best@gmail.com";
 const ADMIN_PASSWORD = "123456";
 
+// seed or refresh the default admin account in localStorage
 export function ensureAdminUser() {
   const users = getRegisteredUsers();
   const index = users.findIndex(
@@ -61,18 +62,22 @@ export function ensureAdminUser() {
   }
 }
 
+// read all registered users from localStorage
 export function getRegisteredUsers() {
   return readJson(USERS_KEY, []);
 }
 
+// read the current session user from localStorage
 export function getCurrentUser() {
   return readJson(SESSION_KEY, null);
 }
 
+// check whether a session user is stored
 export function isLoggedIn() {
   return getCurrentUser() !== null;
 }
 
+// register a new user in localStorage
 export function registerUser({ name, username, email, password }) {
   const users = getRegisteredUsers();
   const normalizedEmail = email.trim().toLowerCase();
@@ -100,6 +105,7 @@ export function registerUser({ name, username, email, password }) {
   return { success: true, user: toSessionUser(newUser) };
 }
 
+// log in and store the session user in localStorage
 export function loginUser({ email, password }) {
   const users = getRegisteredUsers();
   const normalizedEmail = email.trim().toLowerCase();
@@ -118,10 +124,12 @@ export function loginUser({ email, password }) {
   return { success: true, user: sessionUser };
 }
 
+// clear the current session from localStorage
 export function logoutUser() {
   localStorage.removeItem(SESSION_KEY);
 }
 
+// update the logged-in user's profile in localStorage
 export function updateProfile({ name, username, avatar }) {
   const session = getCurrentUser();
   if (!session) {
@@ -170,6 +178,7 @@ export function updateProfile({ name, username, avatar }) {
   return { success: true, user: sessionUser };
 }
 
+// change the logged-in user's password in localStorage
 export function changePassword({ currentPassword, newPassword }) {
   const session = getCurrentUser();
   if (!session) {

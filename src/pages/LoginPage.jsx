@@ -25,6 +25,7 @@ function FormField({ id, label, error, children }) {
   );
 }
 
+// login form for email and password
 export function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();

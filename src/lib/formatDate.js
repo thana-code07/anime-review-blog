@@ -1,3 +1,4 @@
+// format ISO dates for display
 export function formatPostDate(isoDate) {
   return new Date(isoDate).toLocaleDateString("en-GB", {
     day: "numeric",
@@ -6,6 +7,7 @@ export function formatPostDate(isoDate) {
   });
 }
 
+// format like counts
 export function formatLikes(likes) {
   if (likes >= 1000) {
     return `${(likes / 1000).toFixed(1).replace(/\.0$/, "")}k`;

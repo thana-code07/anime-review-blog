@@ -12,6 +12,7 @@ import {
   CollapsibleTrigger,
 } from "./ui/collapsible";
 
+// top navigation bar with logo, links, search, and auth actions
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const { isLoggedIn } = useAuth();

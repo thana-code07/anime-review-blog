@@ -39,6 +39,7 @@ function formatPosts(posts) {
   }));
 }
 
+// article list with category tabs, search, and pagination
 export function ArticlesSection() {
   const [category, setCategory] = useState("highlight");
 

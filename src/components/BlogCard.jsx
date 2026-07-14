@@ -39,4 +39,5 @@ function BlogCard({ id, image, category, title, description, author, date }) {
   );
 }
 
+// card preview for a single blog post
 export default BlogCard;

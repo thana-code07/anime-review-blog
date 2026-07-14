@@ -12,6 +12,7 @@ import {
 
 const AuthContext = createContext(null);
 
+// provides auth state and login/logout/profile helpers to the app
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     ensureAdminUser();
@@ -65,6 +66,7 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// hook to read auth context; throws if used outside AuthProvider
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

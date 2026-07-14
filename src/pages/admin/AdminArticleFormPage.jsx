@@ -86,6 +86,7 @@ function validateArticleForm(form, { requirePublishFields }) {
   return errors;
 }
 
+// admin create/edit article form
 export function AdminArticleFormPage() {
   const { articleId } = useParams();
   const isEdit = Boolean(articleId);

@@ -1,21 +1,25 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// validate that name is not empty
 export function validateName(name) {
   if (!name?.trim()) return "Name is required";
   return null;
 }
 
+// validate that username is not empty
 export function validateUsername(username) {
   if (!username?.trim()) return "Username is required";
   return null;
 }
 
+// validate email presence and format
 export function validateEmail(email) {
   if (!email?.trim()) return "Email is required";
   if (!EMAIL_REGEX.test(email.trim())) return "Email must be a valid email";
   return null;
 }
 
+// validate password meets minimum length
 export function validatePassword(password) {
   if (!password || password.length < 6) {
     return "Password must be at least 6 characters";
@@ -23,6 +27,7 @@ export function validatePassword(password) {
   return null;
 }
 
+// validate all sign-up form fields
 export function validateSignUpForm({ name, username, email, password }) {
   const errors = {};
 
@@ -41,6 +46,7 @@ export function validateSignUpForm({ name, username, email, password }) {
   return errors;
 }
 
+// validate login email and password fields
 export function validateLoginForm({ email, password }) {
   const errors = {};
 
@@ -52,12 +58,14 @@ export function validateLoginForm({ email, password }) {
   return errors;
 }
 
+// validate that confirm password matches
 export function validateConfirmPassword(password, confirmPassword) {
   if (!confirmPassword) return "Please confirm your new password";
   if (password !== confirmPassword) return "Passwords do not match";
   return null;
 }
 
+// validate profile name and username fields
 export function validateProfileForm({ name, username }) {
   const errors = {};
 
@@ -70,6 +78,7 @@ export function validateProfileForm({ name, username }) {
   return errors;
 }
 
+// validate reset password form fields
 export function validateResetPasswordForm({
   currentPassword,
   newPassword,

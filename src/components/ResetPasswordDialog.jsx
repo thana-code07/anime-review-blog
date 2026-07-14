@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/Button";
 
+// confirm dialog before sending a password reset
 export function ResetPasswordDialog({ open, onOpenChange, onConfirm }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
