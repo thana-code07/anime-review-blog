@@ -15,8 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import { getCategoryNames } from "@/lib/adminCategories";
 import {
-  ARTICLE_CATEGORIES,
   createArticle,
   deleteArticle,
   getArticle,
@@ -98,6 +98,7 @@ export function AdminArticleFormPage() {
   const [errors, setErrors] = useState({});
   const [notFound, setNotFound] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [categoryNames] = useState(() => getCategoryNames());
 
   useEffect(() => {
     if (!isEdit) {
@@ -338,7 +339,7 @@ export function AdminArticleFormPage() {
               <SelectValue placeholder="Select category" />
             </SelectTrigger>
             <SelectContent>
-              {ARTICLE_CATEGORIES.map((category) => (
+              {categoryNames.map((category) => (
                 <SelectItem key={category} value={category}>
                   {category}
                 </SelectItem>

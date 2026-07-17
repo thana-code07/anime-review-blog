@@ -1,7 +1,5 @@
 const ARTICLES_KEY = "adminArticles";
 
-// allowed article category options
-export const ARTICLE_CATEGORIES = ["Cat", "General", "Inspiration"];
 // allowed article status options
 export const ARTICLE_STATUSES = ["Published", "Draft"];
 
@@ -194,4 +192,20 @@ export function deleteArticle(id) {
   }
   writeJson(ARTICLES_KEY, next);
   return true;
+}
+
+// rename category on all articles that use the old name
+export function renameArticlesCategory(oldName, newName) {
+  const articles = getArticles();
+  let changed = false;
+  const next = articles.map((article) => {
+    if (article.category === oldName) {
+      changed = true;
+      return { ...article, category: newName };
+    }
+    return article;
+  });
+  if (changed) {
+    writeJson(ARTICLES_KEY, next);
+  }
 }

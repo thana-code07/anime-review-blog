@@ -45,11 +45,18 @@ function AccountNavLink({ to, label, icon: Icon, variant }) {
 
 // account pages shell with profile sidebar and outlet
 export function AccountLayout() {
-  const { user, isLoggedIn } = useAuth();
+  const { user, isLoggedIn, isAdmin } = useAuth();
   const location = useLocation();
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (isAdmin) {
+    const adminPath = location.pathname.startsWith("/reset-password")
+      ? "/admin/reset-password"
+      : "/admin/profile";
+    return <Navigate to={adminPath} replace />;
   }
 
   const sectionTitle = getSectionTitle(location.pathname);

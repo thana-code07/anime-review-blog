@@ -61,12 +61,17 @@ function MenuItem({ to, icon: Icon, children, onClick }) {
 }
 
 function MenuLinks({ onNavigate, onLogout, isAdmin }) {
+  const profilePath = isAdmin ? "/admin/profile" : "/profile";
+  const resetPasswordPath = isAdmin
+    ? "/admin/reset-password"
+    : "/reset-password";
+
   return (
     <nav className="flex flex-col" aria-label="Account">
-      <MenuItem to="/profile" icon={User} onClick={onNavigate}>
+      <MenuItem to={profilePath} icon={User} onClick={onNavigate}>
         Profile
       </MenuItem>
-      <MenuItem to="/reset-password" icon={RotateCcw} onClick={onNavigate}>
+      <MenuItem to={resetPasswordPath} icon={RotateCcw} onClick={onNavigate}>
         Reset password
       </MenuItem>
       {isAdmin && (

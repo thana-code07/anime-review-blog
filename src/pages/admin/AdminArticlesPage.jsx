@@ -13,8 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getCategoryNames } from "@/lib/adminCategories";
 import {
-  ARTICLE_CATEGORIES,
   ARTICLE_STATUSES,
   deleteArticle,
   getArticles,
@@ -56,6 +56,7 @@ function StatusBadge({ status }) {
 export function AdminArticlesPage() {
   const navigate = useNavigate();
   const [articles, setArticles] = useState(() => getArticles());
+  const [categoryNames, setCategoryNames] = useState(() => getCategoryNames());
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [category, setCategory] = useState("all");
@@ -63,6 +64,7 @@ export function AdminArticlesPage() {
 
   const refreshArticles = useCallback(() => {
     setArticles(getArticles());
+    setCategoryNames(getCategoryNames());
   }, []);
 
   useEffect(() => {
@@ -157,7 +159,7 @@ export function AdminArticlesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Category</SelectItem>
-            {ARTICLE_CATEGORIES.map((item) => (
+            {categoryNames.map((item) => (
               <SelectItem key={item} value={item.toLowerCase()}>
                 {item}
               </SelectItem>

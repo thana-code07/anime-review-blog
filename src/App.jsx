@@ -1,11 +1,15 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { AccountLayout } from "@/components/AccountLayout";
-import { AdminLayout } from "@/components/AdminLayout";
+import {
+  AdminCenteredFormLayout,
+  AdminLayout,
+} from "@/components/AdminLayout";
 import { Toaster } from "@/components/ui/sonner";
 import { AdminArticleFormPage } from "./pages/admin/AdminArticleFormPage";
 import { AdminArticlesPage } from "./pages/admin/AdminArticlesPage";
 import { AdminCategoriesPage } from "./pages/admin/AdminCategoriesPage";
+import { AdminCategoryFormPage } from "./pages/admin/AdminCategoryFormPage";
 import { BlogPostPage } from "./pages/BlogPostPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -28,15 +32,24 @@ function App() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
-        <Route element={<AdminLayout />}>
-          <Route path="/admin" element={<Navigate to="/admin/articles" replace />} />
-          <Route path="/admin/articles" element={<AdminArticlesPage />} />
-          <Route path="/admin/articles/new" element={<AdminArticleFormPage />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Navigate to="articles" replace />} />
+          <Route path="articles" element={<AdminArticlesPage />} />
+          <Route path="articles/new" element={<AdminArticleFormPage />} />
           <Route
-            path="/admin/articles/:articleId/edit"
+            path="articles/:articleId/edit"
             element={<AdminArticleFormPage />}
           />
-          <Route path="/admin/categories" element={<AdminCategoriesPage />} />
+          <Route path="categories/new" element={<AdminCategoryFormPage />} />
+          <Route
+            path="categories/:categoryId/edit"
+            element={<AdminCategoryFormPage />}
+          />
+          <Route path="categories" element={<AdminCategoriesPage />} />
+          <Route element={<AdminCenteredFormLayout />}>
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="reset-password" element={<ResetPasswordPage />} />
+          </Route>
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

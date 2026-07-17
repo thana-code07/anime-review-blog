@@ -15,9 +15,9 @@ import { cn } from "@/lib/utils";
 const PRIMARY_LINKS = [
   { to: "/admin/articles", label: "Article management", icon: FileText },
   { to: "/admin/categories", label: "Category management", icon: Folder },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/admin/profile", label: "Profile", icon: User },
   { to: "/admin/notifications", label: "Notification", icon: Bell, disabled: true },
-  { to: "/reset-password", label: "Reset password", icon: RotateCcw },
+  { to: "/admin/reset-password", label: "Reset password", icon: RotateCcw },
 ];
 
 function SidebarLink({ to, label, icon: Icon, disabled, end }) {
@@ -108,9 +108,20 @@ export function AdminLayout() {
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-auto bg-white">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-auto bg-white">
         <Outlet />
       </main>
+    </div>
+  );
+}
+
+// vertically center account forms in the admin content area
+export function AdminCenteredFormLayout() {
+  return (
+    <div className="flex flex-1 flex-col justify-center px-6 py-10 sm:px-10 lg:px-16">
+      <div className="w-full max-w-2xl">
+        <Outlet />
+      </div>
     </div>
   );
 }
