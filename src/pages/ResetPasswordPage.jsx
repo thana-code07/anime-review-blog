@@ -6,7 +6,11 @@ import { ResetPasswordDialog } from "@/components/auth/ResetPasswordDialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
-import { inputClassName, successToastClassNames } from "@/lib/constants";
+import {
+  errorToastClassNames,
+  inputClassName,
+  successToastClassNames,
+} from "@/lib/constants";
 import { validateResetPasswordForm } from "@/lib/validation";
 
 const emptyForm = {
@@ -60,10 +64,12 @@ export function ResetPasswordPage() {
           logout();
           toast.error("Session expired", {
             description: "Please log in again to reset your password.",
+            classNames: errorToastClassNames,
           });
         } else {
           toast.error("Failed to reset password", {
             description: result.message || "Please try again.",
+            classNames: errorToastClassNames,
           });
         }
         return;
