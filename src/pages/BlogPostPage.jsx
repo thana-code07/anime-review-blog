@@ -1,0 +1,351 @@
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import { Heart, Link2 } from "lucide-react";
+import { toast } from "sonner";
+
+import { LoginRequiredDialog } from "@/components/auth/LoginRequiredDialog";
+import { CommentItem } from "@/components/blog/CommentItem";
+import { SocialShareButton } from "@/components/blog/SocialShareButton";
+import { FooterSection } from "@/components/layout/FooterSection";
+import LoadingSpinner from "@/components/layout/LoadingSpinner";
+import { Navbar } from "@/components/layout/Navbar";
+import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  createComment,
+  fetchComments,
+  fetchPost,
+  likePost,
+  unlikePost,
+} from "@/lib/blogApi";
+import { useSiteAuthorAvatar } from "@/hooks/useSiteAuthorAvatar";
+import { AUTHOR_BIO_PARAGRAPHS, successToastClassNames } from "@/lib/constants";
+import { formatLikes, formatPostDate } from "@/lib/formatDate";
+import { buildShareUrl } from "@/lib/share";
+
+// single article page with likes, share, and comments
+export function BlogPostPage() {
+  const { postId } = useParams();
+  const { isLoggedIn } = useAuth();
+  const authorAvatar = useSiteAuthorAvatar();
+  const [post, setPost] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+  const [commentText, setCommentText] = useState("");
+  const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isTogglingLike, setIsTogglingLike] = useState(false);
+
+  function requireAuth(action) {
+    if (!isLoggedIn) {
+      setIsLoginDialogOpen(true);
+      return;
+    }
+    action();
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPost() {
+      setIsLoading(true);
+      setError(null);
+      setPost(null);
+      setComments([]);
+
+      try {
+        const data = await fetchPost(postId);
+        if (cancelled) return;
+        setPost(data);
+        setLiked(Boolean(data.liked_by_me));
+        setLikesCount(data.likes_count ?? 0);
+      } catch {
+        if (cancelled) return;
+        setError("Failed to load this article.");
+        return;
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+
+      try {
+        const commentRows = await fetchComments(postId);
+        if (cancelled) return;
+        setComments(commentRows);
+      } catch {
+        if (cancelled) return;
+        setComments([]);
+        toast.error("Failed to load comments", {
+          description: "The article loaded, but comments are unavailable.",
+        });
+      }
+    }
+
+    loadPost();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [postId]);
+
+  useEffect(() => {
+    if (isLoading || !post) {
+      return;
+    }
+
+    if (window.location.hash !== "#comments") {
+      return;
+    }
+
+    const commentsSection = document.getElementById("comments");
+    commentsSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [isLoading, post]);
+
+  const articleUrl = window.location.href;
+
+  async function handleLike() {
+    if (isTogglingLike) return;
+    setIsTogglingLike(true);
+
+    try {
+      if (liked) {
+        const result = await unlikePost(postId);
+        setLiked(false);
+        setLikesCount(result.likes_count ?? Math.max(likesCount - 1, 0));
+      } else {
+        const result = await likePost(postId);
+        setLiked(true);
+        setLikesCount(result.likes_count ?? likesCount + 1);
+      }
+    } catch {
+      toast.error("Failed to update like", {
+        description: "Please try again.",
+      });
+    } finally {
+      setIsTogglingLike(false);
+    }
+  }
+
+  async function handleSendComment() {
+    const trimmed = commentText.trim();
+    if (!trimmed || isSubmittingComment) return;
+
+    setIsSubmittingComment(true);
+    try {
+      const comment = await createComment(postId, trimmed);
+      setComments((prev) => [comment, ...prev]);
+      setCommentText("");
+    } catch {
+      toast.error("Failed to post comment", {
+        description: "Please try again.",
+      });
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  }
+
+  async function handleCopyLink() {
+    try {
+      await navigator.clipboard.writeText(articleUrl);
+      toast.success("Copied!", {
+        description: "This article has been copied to your clipboard.",
+        classNames: successToastClassNames,
+      });
+    } catch {
+      toast.error("Failed to copy link", {
+        description: "Please try again or copy the URL manually.",
+      });
+    }
+  }
+
+  return (
+    <div className="min-h-svh bg-brown-100">
+      <Navbar />
+
+      <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8 sm:py-10 lg:px-[120px] lg:py-12">
+        {isLoading && (
+          <div className="flex justify-center py-24">
+            <LoadingSpinner />
+          </div>
+        )}
+
+        {error && <p className="py-24 text-center text-red-600">{error}</p>}
+
+        {!isLoading && !error && post && (
+          <>
+            <img
+              src={post.image}
+              alt={post.title}
+              className="aspect-video w-full rounded-2xl object-cover shadow-[0_12px_40px_rgb(38_35_30/0.08)]"
+            />
+
+            <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_300px] lg:gap-14">
+              <article>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="rounded-full bg-green-200 px-3 py-1 text-sm font-semibold text-green-600">
+                    {post.category}
+                  </span>
+                  <span className="text-sm text-brown-600">
+                    {formatPostDate(post.date)}
+                  </span>
+                </div>
+
+                <h1 className="mt-5 font-poppins text-3xl font-bold tracking-tight text-brown-900 sm:text-[2.5rem] sm:leading-tight">
+                  {post.title}
+                </h1>
+
+                <div className="markdown mt-8">
+                  <ReactMarkdown>{post.content}</ReactMarkdown>
+                </div>
+
+                <div className="mt-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brown-300/80 bg-brown-200/70 px-4 py-3.5 sm:px-5">
+                  <button
+                    type="button"
+                    onClick={() => requireAuth(handleLike)}
+                    aria-pressed={liked}
+                    disabled={isTogglingLike}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brown-300 bg-brown-100 px-4 py-2 text-sm text-brown-900 transition-colors hover:bg-white disabled:opacity-60"
+                  >
+                    <Heart
+                      className={`size-4 ${liked ? "fill-brown-900 text-brown-900" : ""}`}
+                    />
+                    <span>{formatLikes(likesCount)}</span>
+                  </button>
+
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brown-300 bg-brown-100 px-4 py-2 text-sm text-brown-900 transition-colors hover:bg-white"
+                    >
+                      <Link2 className="size-4" />
+                      <span>Copy link</span>
+                    </button>
+
+                    <SocialShareButton
+                      label="Share on Facebook"
+                      className="bg-brown-800 hover:bg-brown-900"
+                      href={buildShareUrl("facebook", articleUrl)}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="size-4 fill-current"
+                        aria-hidden
+                      >
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                      </svg>
+                    </SocialShareButton>
+                    <SocialShareButton
+                      label="Share on LinkedIn"
+                      className="bg-brown-800 hover:bg-brown-900"
+                      href={buildShareUrl("linkedin", articleUrl)}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="size-4 fill-current"
+                        aria-hidden
+                      >
+                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                      </svg>
+                    </SocialShareButton>
+                    <SocialShareButton
+                      label="Share on Twitter"
+                      className="bg-brown-800 hover:bg-brown-900"
+                      href={buildShareUrl("twitter", articleUrl)}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="size-4 fill-current"
+                        aria-hidden
+                      >
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                      </svg>
+                    </SocialShareButton>
+                  </div>
+                </div>
+
+                <section
+                  id="comments"
+                  className="mt-12 scroll-mt-28"
+                  aria-label="Comments"
+                >
+                  <label htmlFor="commentText" className="text-brown-600">
+                    Comment
+                  </label>
+                  <textarea
+                    id="commentText"
+                    placeholder="What are your thoughts?"
+                    rows={4}
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    className="w-full resize-none rounded-xl border border-brown-300 bg-white px-4 py-3 text-brown-900 placeholder:text-brown-400 focus:border-brown-400 focus:outline-none"
+                  />
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      variant="primary"
+                      className="rounded-full px-8"
+                      disabled={isSubmittingComment}
+                      onClick={() => requireAuth(handleSendComment)}
+                    >
+                      {isSubmittingComment ? "Sending..." : "Send"}
+                    </Button>
+                  </div>
+
+                  <div className="mt-8 space-y-6">
+                    {comments.map((comment) => (
+                      <CommentItem
+                        key={comment.id}
+                        name={comment.name}
+                        avatar={comment.profile_pic}
+                        date={formatPostDate(comment.created_at)}
+                        text={comment.comment_text}
+                      />
+                    ))}
+                    {comments.length === 0 && (
+                      <p className="border-t border-brown-300 pt-6 text-brown-600">
+                        No comments yet. Be the first to share your thoughts.
+                      </p>
+                    )}
+                  </div>
+                </section>
+              </article>
+
+              <aside className="lg:sticky lg:top-28 lg:self-start lg:pt-2">
+                <div className="rounded-2xl border border-brown-300/70 bg-brown-200/80 p-6">
+                  <img
+                    src={authorAvatar}
+                    alt="Author"
+                    className="size-16 rounded-full object-cover"
+                  />
+                  <p className="mt-4 text-sm tracking-wide text-brown-500 uppercase">
+                    Author
+                  </p>
+                  <p className="mt-1 font-poppins text-lg font-semibold text-brown-900">
+                    Best Thana<span className="text-green-500">.</span>
+                  </p>
+                  <div className="mt-3 space-y-3 text-sm leading-relaxed text-brown-600">
+                    {AUTHOR_BIO_PARAGRAPHS.map((paragraph) => (
+                      <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+                    ))}
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </>
+        )}
+      </main>
+
+      <FooterSection />
+
+      <LoginRequiredDialog
+        open={isLoginDialogOpen}
+        onOpenChange={setIsLoginDialogOpen}
+      />
+    </div>
+  );
+}
