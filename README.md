@@ -1,16 +1,59 @@
-# React + Vite
+# Anime Review Blog
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Anime Review Blog is a full-stack review site for browsing, reading, and engaging with anime write-ups. This package is the React frontend.
 
-Currently, two official plugins are available:
+## Live Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+[https://anime-review-blog.vercel.app/](https://anime-review-blog.vercel.app/)
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Browse published reviews with search, category filter, and pagination
+- Read markdown posts with likes, comments, and social sharing
+- Authentication: sign up, login, profile and avatar management, password reset
+- Admin CMS for articles (draft/publish), categories, post images, and engagement notifications
+- Role-aware UI that routes admins into the CMS and keeps public readers on the blog
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- React 19 + Vite
+- React Router
+- Tailwind CSS 4 + shadcn/ui
+- Axios
+- react-markdown
+
+## Architecture
+
+The client is organized around pages and layouts, with shared state and API access layered underneath:
+
+- **Pages & layouts** — public blog, auth flows, account settings, and admin shell
+- **Contexts** — `AuthContext` for session/user state; `NotificationsContext` for unread counts and dropdowns
+- **API modules** — domain helpers under `src/lib/` (`blogApi`, `auth`, `categoriesApi`, `notificationApi`, and related admin helpers)
+- **HTTP client** — Axios instance with a Bearer token interceptor; clears the session on unauthorized responses
+
+## Getting Started
+
+```bash
+cd client
+npm install
+```
+
+Create a `.env` file in `client/` with:
+
+```env
+VITE_API_BASE_URL=http://localhost:4000
+```
+
+Point `VITE_API_BASE_URL` at your running API (local or deployed).
+
+```bash
+npm run dev      # development server (typically http://localhost:5173)
+npm run build    # production build
+npm run preview  # preview the production build
+```
+
+The API must be running for auth, posts, and engagement features to work. See the [server README](../server/README.md) for backend setup.
+
+## Related
+
+- [Server (API)](../server/README.md)
