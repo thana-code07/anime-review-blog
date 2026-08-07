@@ -5,22 +5,16 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getApiErrorMessage } from "@/lib/api";
 import {
   createCategory,
   getCategory,
   updateCategory,
-} from "@/lib/adminCategories";
-
-const successToastClassNames = {
-  toast: "bg-[#31dc70] text-white border-none",
-  title: "text-white font-bold text-lg",
-  description: "!text-white text-[15px] leading-normal",
-  closeButton:
-    "!bg-transparent !border-none !text-white !shadow-none !left-auto !right-3 !top-3 !transform-none rounded",
-};
-
-const inputClassName =
-  "h-12 rounded-lg border border-brown-300 bg-white px-4 py-3 text-base text-brown-900 placeholder:text-brown-600 focus-visible:border-brown-500 focus-visible:ring-brown-500/20 md:text-base";
+} from "@/lib/categoriesApi";
+import {
+  adminInputClassName,
+  successToastClassNames,
+} from "@/lib/constants";
 
 // admin create/edit category form
 export function AdminCategoryFormPage() {
@@ -32,46 +26,68 @@ export function AdminCategoryFormPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [notFound, setNotFound] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (!isEdit) {
-      setName("");
-      setError("");
-      setNotFound(false);
-      return;
+    let cancelled = false;
+
+    async function load() {
+      if (!isEdit) {
+        setName("");
+        setError("");
+        setNotFound(false);
+        return;
+      }
+
+      try {
+        const category = await getCategory(categoryId);
+        if (cancelled) return;
+        if (!category) {
+          setNotFound(true);
+          return;
+        }
+        setNotFound(false);
+        setName(category.name);
+        setError("");
+      } catch {
+        if (!cancelled) {
+          setNotFound(true);
+        }
+      }
     }
 
-    const category = getCategory(categoryId);
-    if (!category) {
-      setNotFound(true);
-      return;
-    }
+    load();
 
-    setNotFound(false);
-    setName(category.name);
-    setError("");
+    return () => {
+      cancelled = true;
+    };
   }, [categoryId, isEdit]);
 
-  function handleSave(event) {
+  async function handleSave(event) {
     event.preventDefault();
+    setIsSaving(true);
 
-    const result = isEdit
-      ? updateCategory(categoryId, { name })
-      : createCategory({ name });
+    try {
+      if (isEdit) {
+        await updateCategory(categoryId, { name });
+      } else {
+        await createCategory({ name });
+      }
 
-    if (result.error) {
-      setError(result.error);
-      toast.error(result.error);
-      return;
+      toast.success(isEdit ? "Edit category" : "Create category", {
+        description: isEdit
+          ? "Category has been successfully updated."
+          : "Category has been successfully created.",
+        classNames: successToastClassNames,
+      });
+      navigate("/admin/categories");
+    } catch (err) {
+      const message = getApiErrorMessage(err, "Failed to save category");
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsSaving(false);
     }
-
-    toast.success(isEdit ? "Edit category" : "Create category", {
-      description: isEdit
-        ? "Category has been successfully updated."
-        : "Category has been successfully created.",
-      classNames: successToastClassNames,
-    });
-    navigate("/admin/categories");
   }
 
   if (notFound) {
@@ -101,8 +117,9 @@ export function AdminCategoryFormPage() {
           <Button
             type="submit"
             className="rounded-full px-8 self-start sm:self-auto"
+            disabled={isSaving}
           >
-            Save
+            {isSaving ? "Saving..." : "Save"}
           </Button>
         </div>
 
@@ -119,7 +136,7 @@ export function AdminCategoryFormPage() {
               setName(event.target.value);
               setError("");
             }}
-            className={inputClassName}
+            className={adminInputClassName}
             aria-invalid={Boolean(error)}
           />
           {error && <p className="text-sm text-destructive">{error}</p>}

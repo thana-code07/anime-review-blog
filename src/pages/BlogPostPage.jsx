@@ -4,14 +4,24 @@ import ReactMarkdown from "react-markdown";
 import { Heart, Link2 } from "lucide-react";
 import { toast } from "sonner";
 
-import { FooterSection } from "@/components/FooterSection";
-import { LoginRequiredDialog } from "@/components/LoginRequiredDialog";
-import LoadingSpinner from "@/components/LoadingSpinner";
-import { Navbar } from "@/components/Navbar";
+import { LoginRequiredDialog } from "@/components/auth/LoginRequiredDialog";
+import { CommentItem } from "@/components/blog/CommentItem";
+import { SocialShareButton } from "@/components/blog/SocialShareButton";
+import { FooterSection } from "@/components/layout/FooterSection";
+import LoadingSpinner from "@/components/layout/LoadingSpinner";
+import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
-import { fetchPost } from "@/lib/blogApi";
+import {
+  createComment,
+  fetchComments,
+  fetchPost,
+  likePost,
+  unlikePost,
+} from "@/lib/blogApi";
+import { successToastClassNames } from "@/lib/constants";
 import { formatLikes, formatPostDate } from "@/lib/formatDate";
+import { buildShareUrl } from "@/lib/share";
 
 const AUTHOR_AVATAR =
   "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg";
@@ -19,110 +29,20 @@ const AUTHOR_AVATAR =
 const AUTHOR_BIO =
   "I am a pet enthusiast and freelance writer who specializes in animal behavior and care. With a deep love for cats, I enjoy sharing insights on feline companionship and wellness.";
 
-const MOCK_COMMENTS = [
-  {
-    id: 1,
-    name: "Jacob Lash",
-    avatar:
-      "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg",
-    date: "11 September 2024",
-    text: "I loved this article! It really captures the essence of why cats are such amazing companions.",
-  },
-  {
-    id: 2,
-    name: "Arvi",
-    avatar:
-      "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg",
-    date: "11 September 2024",
-    text: "Such a great read! I've always been a dog person, but this makes me want to adopt a cat now.",
-  },
-  {
-    id: 3,
-    name: "Mimi mama",
-    avatar:
-      "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg",
-    date: "11 September 2024",
-    text: "This article perfectly describes why cats are so lovable. Great job!",
-  },
-];
-
-function buildShareUrl(platform, url) {
-  const encodedUrl = encodeURIComponent(url);
-
-  switch (platform) {
-    case "facebook":
-      return `https://www.facebook.com/share.php?u=${encodedUrl}`;
-    case "linkedin":
-      return `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
-    case "twitter":
-      return `https://www.twitter.com/share?&url=${encodedUrl}`;
-    default:
-      return url;
-  }
-}
-
-function SocialShareButton({ label, className, href, children }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={label}
-      className={`inline-flex size-10 items-center justify-center rounded-full text-white transition-opacity hover:opacity-90 ${className}`}
-    >
-      {children}
-    </a>
-  );
-}
-
-function CommentItem({ name, avatar, date, text }) {
-  return (
-    <div className="flex gap-4 border-t border-brown-300 pt-6">
-      <img
-        src={avatar}
-        alt={name}
-        className="size-10 shrink-0 rounded-full object-cover"
-      />
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-semibold text-brown-900">{name}</span>
-          <span className="text-sm text-brown-600">{date}</span>
-        </div>
-        <p className="mt-2 text-brown-800">{text}</p>
-      </div>
-    </div>
-  );
-}
-
-function likedPostsKey(email) {
-  return `likedPosts:${email}`;
-}
-
-function getLikedPostIds(email) {
-  if (!email) return [];
-  try {
-    const raw = localStorage.getItem(likedPostsKey(email));
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.map(String) : [];
-  } catch {
-    return [];
-  }
-}
-
-function setLikedPostIds(email, postIds) {
-  localStorage.setItem(likedPostsKey(email), JSON.stringify(postIds));
-}
-
 // single article page with likes, share, and comments
 export function BlogPostPage() {
   const { postId } = useParams();
-  const { user, isLoggedIn } = useAuth();
+  const { isLoggedIn } = useAuth();
   const [post, setPost] = useState(null);
+  const [comments, setComments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [liked, setLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isTogglingLike, setIsTogglingLike] = useState(false);
 
   function requireAuth(action) {
     if (!isLoggedIn) {
@@ -139,11 +59,18 @@ export function BlogPostPage() {
       setIsLoading(true);
       setError(null);
       setPost(null);
+      setComments([]);
 
       try {
-        const data = await fetchPost(postId);
+        const [data, commentRows] = await Promise.all([
+          fetchPost(postId),
+          fetchComments(postId),
+        ]);
         if (cancelled) return;
         setPost(data);
+        setLiked(Boolean(data.liked_by_me));
+        setLikesCount(data.likes_count ?? 0);
+        setComments(commentRows);
       } catch {
         if (cancelled) return;
         setError("Failed to load this article.");
@@ -161,28 +88,47 @@ export function BlogPostPage() {
     };
   }, [postId]);
 
-  useEffect(() => {
-    if (!user?.email || !postId) {
-      setLiked(false);
-      return;
-    }
-    setLiked(getLikedPostIds(user.email).includes(String(postId)));
-  }, [user?.email, postId]);
-
   const articleUrl = window.location.href;
 
-  function handleLike() {
-    if (!user?.email) return;
+  async function handleLike() {
+    if (isTogglingLike) return;
+    setIsTogglingLike(true);
 
-    const id = String(postId);
-    const likedIds = getLikedPostIds(user.email);
-    const nextLiked = !likedIds.includes(id);
-    const nextIds = nextLiked
-      ? [...likedIds, id]
-      : likedIds.filter((likedId) => likedId !== id);
+    try {
+      if (liked) {
+        const result = await unlikePost(postId);
+        setLiked(false);
+        setLikesCount(result.likes_count ?? Math.max(likesCount - 1, 0));
+      } else {
+        const result = await likePost(postId);
+        setLiked(true);
+        setLikesCount(result.likes_count ?? likesCount + 1);
+      }
+    } catch {
+      toast.error("Failed to update like", {
+        description: "Please try again.",
+      });
+    } finally {
+      setIsTogglingLike(false);
+    }
+  }
 
-    setLikedPostIds(user.email, nextIds);
-    setLiked(nextLiked);
+  async function handleSendComment() {
+    const trimmed = commentText.trim();
+    if (!trimmed || isSubmittingComment) return;
+
+    setIsSubmittingComment(true);
+    try {
+      const comment = await createComment(postId, trimmed);
+      setComments((prev) => [comment, ...prev]);
+      setCommentText("");
+    } catch {
+      toast.error("Failed to post comment", {
+        description: "Please try again.",
+      });
+    } finally {
+      setIsSubmittingComment(false);
+    }
   }
 
   async function handleCopyLink() {
@@ -190,13 +136,7 @@ export function BlogPostPage() {
       await navigator.clipboard.writeText(articleUrl);
       toast.success("Copied!", {
         description: "This article has been copied to your clipboard.",
-        classNames: {
-          toast: "bg-[#31dc70] text-white border-none",
-          title: "text-white font-bold text-lg",
-          description: "!text-white text-[15px] leading-normal",
-          closeButton:
-            "!bg-transparent !border-none !text-white !shadow-none !left-auto !right-3 !top-3 !transform-none rounded",
-        },
+        classNames: successToastClassNames,
       });
     } catch {
       toast.error("Failed to copy link", {
@@ -250,14 +190,13 @@ export function BlogPostPage() {
                     type="button"
                     onClick={() => requireAuth(handleLike)}
                     aria-pressed={liked}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brown-300 bg-white px-4 py-2 text-sm text-brown-900 transition-colors hover:bg-brown-100"
+                    disabled={isTogglingLike}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brown-300 bg-white px-4 py-2 text-sm text-brown-900 transition-colors hover:bg-brown-100 disabled:opacity-60"
                   >
                     <Heart
                       className={`size-4 ${liked ? "fill-red-500 text-red-500" : ""}`}
                     />
-                    <span>
-                      {formatLikes((post.likes ?? 0) + (liked ? 1 : 0))}
-                    </span>
+                    <span>{formatLikes(likesCount)}</span>
                   </button>
 
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">
@@ -328,20 +267,28 @@ export function BlogPostPage() {
                     <Button
                       variant="primary"
                       className="rounded-full px-8"
-                      onClick={() =>
-                        requireAuth(() => {
-                          // Future: add comment and clear textarea
-                        })
-                      }
+                      disabled={isSubmittingComment}
+                      onClick={() => requireAuth(handleSendComment)}
                     >
-                      Send
+                      {isSubmittingComment ? "Sending..." : "Send"}
                     </Button>
                   </div>
 
                   <div className="mt-8 space-y-6">
-                    {MOCK_COMMENTS.map((comment) => (
-                      <CommentItem key={comment.id} {...comment} />
+                    {comments.map((comment) => (
+                      <CommentItem
+                        key={comment.id}
+                        name={comment.name}
+                        avatar={comment.profile_pic}
+                        date={formatPostDate(comment.created_at)}
+                        text={comment.comment_text}
+                      />
                     ))}
+                    {comments.length === 0 && (
+                      <p className="border-t border-brown-300 pt-6 text-brown-600">
+                        No comments yet. Be the first to share your thoughts.
+                      </p>
+                    )}
                   </div>
                 </section>
               </article>
@@ -350,12 +297,12 @@ export function BlogPostPage() {
                 <div className="rounded-2xl bg-brown-200 p-6">
                   <img
                     src={AUTHOR_AVATAR}
-                    alt={post.author}
+                    alt="Author"
                     className="size-16 rounded-full object-cover"
                   />
                   <p className="mt-4 text-sm text-brown-600">Author</p>
                   <p className="mt-1 font-semibold text-brown-900">
-                    {post.author}
+                    Best Thana.
                   </p>
                   <p className="mt-3 text-sm leading-relaxed text-brown-800">
                     {AUTHOR_BIO}

@@ -3,7 +3,7 @@ import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-import { DeleteArticleDialog } from "@/components/DeleteArticleDialog";
+import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,20 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getCategoryNames } from "@/lib/adminCategories";
 import {
   ARTICLE_STATUSES,
-  deleteArticle,
   getArticles,
+  removeArticle,
 } from "@/lib/adminArticles";
-
-const successToastClassNames = {
-  toast: "bg-[#31dc70] text-white border-none",
-  title: "text-white font-bold text-lg",
-  description: "!text-white text-[15px] leading-normal",
-  closeButton:
-    "!bg-transparent !border-none !text-white !shadow-none !left-auto !right-3 !top-3 !transform-none rounded",
-};
+import { getCategoryNames } from "@/lib/categoriesApi";
+import { successToastClassNames } from "@/lib/constants";
 
 function StatusBadge({ status }) {
   const isPublished = status === "Published";
@@ -55,51 +48,58 @@ function StatusBadge({ status }) {
 // admin list of articles with search, status, and delete
 export function AdminArticlesPage() {
   const navigate = useNavigate();
-  const [articles, setArticles] = useState(() => getArticles());
-  const [categoryNames, setCategoryNames] = useState(() => getCategoryNames());
+  const [articles, setArticles] = useState([]);
+  const [categoryNames, setCategoryNames] = useState([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [category, setCategory] = useState("all");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const refreshArticles = useCallback(() => {
-    setArticles(getArticles());
-    setCategoryNames(getCategoryNames());
-  }, []);
+  const refreshArticles = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [rows, names] = await Promise.all([
+        getArticles({
+          keyword: search,
+          category,
+          status,
+        }),
+        getCategoryNames(),
+      ]);
+      setArticles(rows);
+      setCategoryNames(names);
+    } catch {
+      toast.error("Failed to load articles");
+      setArticles([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [search, status, category]);
 
   useEffect(() => {
-    refreshArticles();
+    const timer = setTimeout(() => {
+      refreshArticles();
+    }, 250);
+    return () => clearTimeout(timer);
   }, [refreshArticles]);
 
-  const filteredArticles = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  const filteredArticles = useMemo(() => articles, [articles]);
 
-    return articles.filter((article) => {
-      const matchesSearch =
-        !query || article.title.toLowerCase().includes(query);
-      const matchesStatus =
-        status === "all" || article.status.toLowerCase() === status;
-      const matchesCategory =
-        category === "all" ||
-        article.category.toLowerCase() === category;
-
-      return matchesSearch && matchesStatus && matchesCategory;
-    });
-  }, [articles, search, status, category]);
-
-  function handleDeleteConfirm() {
+  async function handleDeleteConfirm() {
     if (!deleteTarget) return;
-    const removed = deleteArticle(deleteTarget.id);
-    setDeleteTarget(null);
-    if (!removed) {
+    try {
+      await removeArticle(deleteTarget.id);
+      setDeleteTarget(null);
+      await refreshArticles();
+      toast.success("Article deleted", {
+        description: "The article has been removed.",
+        classNames: successToastClassNames,
+      });
+    } catch {
+      setDeleteTarget(null);
       toast.error("Failed to delete article");
-      return;
     }
-    refreshArticles();
-    toast.success("Article deleted", {
-      description: "The article has been removed.",
-      classNames: successToastClassNames,
-    });
   }
 
   return (
@@ -160,7 +160,7 @@ export function AdminArticlesPage() {
           <SelectContent>
             <SelectItem value="all">Category</SelectItem>
             {categoryNames.map((item) => (
-              <SelectItem key={item} value={item.toLowerCase()}>
+              <SelectItem key={item} value={item}>
                 {item}
               </SelectItem>
             ))}
@@ -190,9 +190,7 @@ export function AdminArticlesPage() {
             {filteredArticles.map((article, index) => (
               <tr
                 key={article.id}
-                className={
-                  index % 2 === 0 ? "bg-white" : "bg-brown-100/70"
-                }
+                className={index % 2 === 0 ? "bg-white" : "bg-brown-100/70"}
               >
                 <td className="max-w-md px-4 py-4 text-base text-brown-900">
                   {article.title}
@@ -227,7 +225,7 @@ export function AdminArticlesPage() {
                 </td>
               </tr>
             ))}
-            {filteredArticles.length === 0 && (
+            {!isLoading && filteredArticles.length === 0 && (
               <tr>
                 <td
                   colSpan={4}
@@ -237,16 +235,28 @@ export function AdminArticlesPage() {
                 </td>
               </tr>
             )}
+            {isLoading && (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="px-4 py-10 text-center text-base text-brown-600"
+                >
+                  Loading articles...
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      <DeleteArticleDialog
+      <ConfirmDeleteDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
         }}
         onConfirm={handleDeleteConfirm}
+        title="Delete article"
+        description="Do you want to delete this article?"
       />
     </div>
   );

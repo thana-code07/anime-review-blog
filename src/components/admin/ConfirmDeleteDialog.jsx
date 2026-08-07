@@ -11,8 +11,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/Button";
 
-// confirm dialog before deleting an admin article
-export function DeleteArticleDialog({ open, onOpenChange, onConfirm }) {
+// confirm dialog before deleting an admin resource
+export function ConfirmDeleteDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+  title,
+  description,
+}) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="rounded-2xl border-0 p-8 sm:max-w-md">
@@ -25,10 +31,10 @@ export function DeleteArticleDialog({ open, onOpenChange, onConfirm }) {
 
         <AlertDialogHeader className="space-y-3 text-center sm:place-items-center sm:text-center">
           <AlertDialogTitle className="text-xl font-bold text-brown-900">
-            Delete article
+            {title}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-base text-brown-600">
-            Do you want to delete this article?
+            {description}
           </AlertDialogDescription>
         </AlertDialogHeader>
 

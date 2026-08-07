@@ -1,37 +1,19 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { FormField } from "@/components/forms/FormField";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  DEFAULT_AVATAR,
+  inputClassName,
+  successToastClassNames,
+} from "@/lib/constants";
 import { validateProfileForm } from "@/lib/validation";
 
-const DEFAULT_AVATAR = "/default-avatar.png";
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
-
-const inputClassName =
-  "h-12 border-border bg-white px-4 py-3 text-base md:text-base";
-
-const successToastClassNames = {
-  toast: "bg-[#31dc70] text-white border-none",
-  title: "text-white font-bold text-lg",
-  description: "!text-white text-[15px] leading-normal",
-  closeButton:
-    "!bg-transparent !border-none !text-white !shadow-none !left-auto !right-3 !top-3 !transform-none rounded",
-};
-
-function FormField({ id, label, error, children }) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-brown-600">
-        {label}
-      </Label>
-      {children}
-      {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
-  );
-}
 
 // edit profile name, username, and avatar
 export function ProfilePage() {
@@ -43,7 +25,9 @@ export function ProfilePage() {
     username: user.username ?? "",
   });
   const [avatarPreview, setAvatarPreview] = useState(user.avatar || null);
+  const [avatarFile, setAvatarFile] = useState(null);
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleChange(field) {
     return (event) => {
@@ -78,6 +62,7 @@ export function ProfilePage() {
       return;
     }
 
+    setAvatarFile(file);
     const reader = new FileReader();
     reader.onload = () => {
       setAvatarPreview(reader.result);
@@ -86,7 +71,7 @@ export function ProfilePage() {
     reader.readAsDataURL(file);
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     const validationErrors = validateProfileForm(form);
@@ -95,11 +80,15 @@ export function ProfilePage() {
       return;
     }
 
-    const result = updateProfile({
+    setIsSubmitting(true);
+    // Do not send the local FileReader data URL as profile_pic — only the File
+    // (uploaded to storage) or omit avatar entirely for name/username-only saves.
+    const result = await updateProfile({
       name: form.name,
       username: form.username,
-      avatar: avatarPreview,
+      avatarFile,
     });
+    setIsSubmitting(false);
 
     if (!result.success) {
       if (result.field) {
@@ -111,6 +100,9 @@ export function ProfilePage() {
       }
       return;
     }
+
+    setAvatarFile(null);
+    setAvatarPreview(result.user.avatar || null);
 
     toast.success("Saved profile", {
       description: "Your profile has been successfully updated.",
@@ -180,8 +172,13 @@ export function ProfilePage() {
           <p className="text-base text-brown-400">{user.email}</p>
         </div>
 
-        <Button type="submit" variant="primary" className="rounded-full px-8">
-          Save
+        <Button
+          type="submit"
+          variant="primary"
+          className="rounded-full px-8"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Saving..." : "Save"}
         </Button>
       </form>
     </div>

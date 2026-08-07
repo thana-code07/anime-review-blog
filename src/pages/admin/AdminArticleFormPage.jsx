@@ -1,56 +1,24 @@
 import { useEffect, useRef, useState } from "react";
-import { ImageIcon, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 
-import { DeleteArticleDialog } from "@/components/DeleteArticleDialog";
+import { ArticleFormFields } from "@/components/admin/ArticleFormFields";
+import { ArticleThumbnailField } from "@/components/admin/ArticleThumbnailField";
+import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { getCategoryNames } from "@/lib/adminCategories";
 import {
-  createArticle,
-  deleteArticle,
   getArticle,
-  updateArticle,
+  removeArticle,
+  saveArticle,
 } from "@/lib/adminArticles";
+import { getApiErrorMessage } from "@/lib/api";
+import { getCategoryNames } from "@/lib/categoriesApi";
+import { successToastClassNames } from "@/lib/constants";
+import { validateArticleForm } from "@/lib/validation";
 
-const MAX_INTRO_LENGTH = 120;
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
-
-const inputClassName =
-  "h-12 rounded-lg border border-brown-300 bg-white px-4 py-3 text-base text-brown-900 placeholder:text-brown-600 focus-visible:border-brown-500 focus-visible:ring-brown-500/20 md:text-base";
-
-const textareaClassName =
-  "w-full rounded-lg border border-brown-300 bg-white px-4 py-3 text-base text-brown-900 placeholder:text-brown-600 outline-none focus-visible:border-brown-500 focus-visible:ring-2 focus-visible:ring-brown-500/20";
-
-const successToastClassNames = {
-  toast: "bg-[#31dc70] text-white border-none",
-  title: "text-white font-bold text-lg",
-  description: "!text-white text-[15px] leading-normal",
-  closeButton:
-    "!bg-transparent !border-none !text-white !shadow-none !left-auto !right-3 !top-3 !transform-none rounded",
-};
-
-function FormField({ id, label, error, children }) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-brown-600">
-        {label}
-      </Label>
-      {children}
-      {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
-  );
-}
 
 function emptyForm(author) {
   return {
@@ -63,29 +31,6 @@ function emptyForm(author) {
   };
 }
 
-function validateArticleForm(form, { requirePublishFields }) {
-  const errors = {};
-
-  if (!form.title.trim()) {
-    errors.title = "Title is required";
-  }
-
-  if (requirePublishFields) {
-    if (!form.category) {
-      errors.category = "Category is required";
-    }
-    if (!form.content.trim()) {
-      errors.content = "Content is required";
-    }
-  }
-
-  if (form.description.length > MAX_INTRO_LENGTH) {
-    errors.description = `Introduction must be ${MAX_INTRO_LENGTH} characters or fewer`;
-  }
-
-  return errors;
-}
-
 // admin create/edit article form
 export function AdminArticleFormPage() {
   const { articleId } = useParams();
@@ -95,33 +40,62 @@ export function AdminArticleFormPage() {
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState(() => emptyForm(user?.name ?? ""));
+  const [imageFile, setImageFile] = useState(null);
   const [errors, setErrors] = useState({});
   const [notFound, setNotFound] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [categoryNames] = useState(() => getCategoryNames());
+  const [categoryNames, setCategoryNames] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    if (!isEdit) {
-      setForm(emptyForm(user?.name ?? ""));
-      setNotFound(false);
-      return;
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const names = await getCategoryNames();
+        if (!cancelled) {
+          setCategoryNames(names);
+        }
+      } catch {
+        if (!cancelled) {
+          setCategoryNames([]);
+        }
+      }
+
+      if (!isEdit) {
+        if (!cancelled) {
+          setForm(emptyForm(user?.name ?? ""));
+          setImageFile(null);
+          setNotFound(false);
+        }
+        return;
+      }
+
+      try {
+        const article = await getArticle(articleId);
+        if (cancelled) return;
+        setNotFound(false);
+        setForm({
+          title: article.title ?? "",
+          category: article.category ?? "",
+          author: user?.name || "",
+          description: article.description ?? "",
+          content: article.content ?? "",
+          image: article.image ?? null,
+        });
+        setImageFile(null);
+      } catch {
+        if (!cancelled) {
+          setNotFound(true);
+        }
+      }
     }
 
-    const article = getArticle(articleId);
-    if (!article) {
-      setNotFound(true);
-      return;
-    }
+    load();
 
-    setNotFound(false);
-    setForm({
-      title: article.title ?? "",
-      category: article.category ?? "",
-      author: article.author || user?.name || "",
-      description: article.description ?? "",
-      content: article.content ?? "",
-      image: article.image ?? null,
-    });
+    return () => {
+      cancelled = true;
+    };
   }, [articleId, isEdit, user?.name]);
 
   function handleChange(field) {
@@ -158,6 +132,7 @@ export function AdminArticleFormPage() {
       return;
     }
 
+    setImageFile(file);
     const reader = new FileReader();
     reader.onload = () => {
       setForm((prev) => ({ ...prev, image: reader.result }));
@@ -166,74 +141,70 @@ export function AdminArticleFormPage() {
     reader.readAsDataURL(file);
   }
 
-  function save(status) {
+  async function save(status) {
     const requirePublishFields = status === "Published";
-    const validationErrors = validateArticleForm(form, {
-      requirePublishFields,
-    });
+    const validationErrors = validateArticleForm(
+      { ...form, imageFile },
+      { requirePublishFields },
+    );
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
     }
 
-    const payload = {
-      title: form.title,
-      category: form.category,
-      author: form.author || user?.name || "",
-      description: form.description,
-      content: form.content,
-      image: form.image,
-      status,
-    };
+    setIsSaving(true);
+    try {
+      await saveArticle({
+        id: isEdit ? articleId : null,
+        title: form.title,
+        category: form.category,
+        description: form.description,
+        content: form.content,
+        image: typeof form.image === "string" && form.image.startsWith("http")
+          ? form.image
+          : null,
+        imageFile,
+        status,
+      });
 
-    if (isEdit) {
-      const updated = updateArticle(articleId, payload);
-      if (!updated) {
-        toast.error("Failed to save article", {
-          description: "This article could not be found.",
-        });
-        return;
-      }
       toast.success(
-        status === "Draft" ? "Saved as draft" : "Article saved",
-        {
-          description:
-            status === "Draft"
-              ? "Your draft has been updated."
-              : "Your article has been saved.",
-          classNames: successToastClassNames,
-        },
-      );
-    } else {
-      createArticle(payload);
-      toast.success(
-        status === "Draft" ? "Saved as draft" : "Article published",
+        status === "Draft"
+          ? "Saved as draft"
+          : isEdit
+            ? "Article saved"
+            : "Article published",
         {
           description:
             status === "Draft"
               ? "Your draft has been saved."
-              : "Your article has been published.",
+              : "Your article has been saved.",
           classNames: successToastClassNames,
         },
       );
+      navigate("/admin/articles");
+    } catch (error) {
+      toast.error("Failed to save article", {
+        description: getApiErrorMessage(error, "Please try again."),
+      });
+    } finally {
+      setIsSaving(false);
     }
-
-    navigate("/admin/articles");
   }
 
-  function handleDeleteConfirm() {
-    const removed = deleteArticle(articleId);
-    setDeleteOpen(false);
-    if (!removed) {
+  async function handleDeleteConfirm() {
+    try {
+      await removeArticle(articleId);
+      setDeleteOpen(false);
+      toast.success("Article deleted", {
+        description: "The article has been removed.",
+        classNames: successToastClassNames,
+      });
+      navigate("/admin/articles");
+    } catch {
+      setDeleteOpen(false);
       toast.error("Failed to delete article");
-      return;
     }
-    toast.success("Article deleted", {
-      description: "The article has been removed.",
-      classNames: successToastClassNames,
-    });
-    navigate("/admin/articles");
   }
 
   if (notFound) {
@@ -267,11 +238,16 @@ export function AdminArticleFormPage() {
             type="button"
             variant="outline"
             className="rounded-full border-brown-900 bg-white text-brown-900 hover:bg-brown-100"
+            disabled={isSaving}
             onClick={() => save("Draft")}
           >
             Save as draft
           </Button>
-          <Button type="button" onClick={() => save("Published")}>
+          <Button
+            type="button"
+            disabled={isSaving}
+            onClick={() => save("Published")}
+          >
             {isEdit ? "Save" : "Save and publish"}
           </Button>
         </div>
@@ -282,117 +258,24 @@ export function AdminArticleFormPage() {
         onSubmit={(event) => event.preventDefault()}
         noValidate
       >
-        <div className="space-y-2">
-          <Label className="text-brown-600">Thumbnail image</Label>
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-            <div className="flex h-40 w-full max-w-xs items-center justify-center overflow-hidden rounded-xl bg-brown-100 sm:h-44">
-              {form.image ? (
-                <img
-                  src={form.image}
-                  alt=""
-                  className="size-full object-cover"
-                />
-              ) : (
-                <ImageIcon
-                  className="size-10 text-brown-400"
-                  strokeWidth={1.25}
-                  aria-hidden
-                />
-              )}
-            </div>
-            <div className="space-y-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                className="rounded-full border-brown-900 bg-white text-brown-900 hover:bg-brown-100"
-                onClick={handleUploadClick}
-              >
-                Upload thumbnail image
-              </Button>
-              {errors.image && (
-                <p className="text-sm text-destructive">{errors.image}</p>
-              )}
-            </div>
-          </div>
-        </div>
+        <ArticleThumbnailField
+          image={form.image}
+          error={errors.image}
+          fileInputRef={fileInputRef}
+          onUploadClick={handleUploadClick}
+          onFileChange={handleFileChange}
+        />
 
-        <FormField id="category" label="Category" error={errors.category}>
-          <Select
-            value={form.category || undefined}
-            onValueChange={(value) => {
-              setForm((prev) => ({ ...prev, category: value }));
-              setErrors((prev) => ({ ...prev, category: undefined }));
-            }}
-          >
-            <SelectTrigger
-              id="category"
-              className="h-12 w-full rounded-lg border border-brown-300 bg-white px-4 text-brown-900 data-placeholder:text-brown-600"
-              aria-label="Category"
-            >
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categoryNames.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FormField>
-
-        <FormField id="author" label="Author name">
-          <Input
-            id="author"
-            value={form.author}
-            readOnly
-            className={`${inputClassName} bg-brown-100 text-brown-800`}
-          />
-        </FormField>
-
-        <FormField id="title" label="Title" error={errors.title}>
-          <Input
-            id="title"
-            placeholder="Article title"
-            value={form.title}
-            onChange={handleChange("title")}
-            className={inputClassName}
-          />
-        </FormField>
-
-        <FormField
-          id="description"
-          label={`Introduction (max ${MAX_INTRO_LENGTH} letters)`}
-          error={errors.description}
-        >
-          <textarea
-            id="description"
-            rows={3}
-            maxLength={MAX_INTRO_LENGTH}
-            placeholder="Introduction"
-            value={form.description}
-            onChange={handleChange("description")}
-            className={textareaClassName}
-          />
-        </FormField>
-
-        <FormField id="content" label="Content" error={errors.content}>
-          <textarea
-            id="content"
-            rows={14}
-            placeholder="Content"
-            value={form.content}
-            onChange={handleChange("content")}
-            className={textareaClassName}
-          />
-        </FormField>
+        <ArticleFormFields
+          form={form}
+          errors={errors}
+          categoryNames={categoryNames}
+          onChange={handleChange}
+          onCategoryChange={(value) => {
+            setForm((prev) => ({ ...prev, category: value }));
+            setErrors((prev) => ({ ...prev, category: undefined }));
+          }}
+        />
 
         {isEdit && (
           <button
@@ -407,10 +290,12 @@ export function AdminArticleFormPage() {
       </form>
 
       {isEdit && (
-        <DeleteArticleDialog
+        <ConfirmDeleteDialog
           open={deleteOpen}
           onOpenChange={setDeleteOpen}
           onConfirm={handleDeleteConfirm}
+          title="Delete article"
+          description="Do you want to delete this article?"
         />
       )}
     </div>

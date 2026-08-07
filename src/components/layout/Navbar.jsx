@@ -2,15 +2,15 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 
-import { useAuth } from "@/contexts/AuthContext";
-import { UserMenu } from "./UserMenu";
-import { Logo } from "./ui/Logo";
-import { Button } from "./ui/Button";
+import { UserMenu } from "@/components/auth/UserMenu";
+import { Logo } from "@/components/ui/Logo";
+import { Button } from "@/components/ui/Button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "./ui/collapsible";
+} from "@/components/ui/collapsible";
+import { useAuth } from "@/contexts/AuthContext";
 
 // top navigation bar with logo, links, search, and auth actions
 export function Navbar() {

@@ -1,211 +1,143 @@
-const ARTICLES_KEY = "adminArticles";
+import {
+  createPost,
+  deletePost,
+  fetchPost,
+  fetchPosts,
+  updatePost,
+  uploadPostImage,
+} from "@/lib/blogApi";
+import { fetchCategories } from "@/lib/categoriesApi";
+import {
+  fetchStatuses,
+  statusIdFromLabel,
+  statusLabelFromDb,
+} from "@/lib/statusesApi";
 
-// allowed article status options
 export const ARTICLE_STATUSES = ["Published", "Draft"];
 
-const SEED_ARTICLES = [
-  {
-    id: "1",
-    title:
-      "Understanding Cat Behavior: Why Your Feline Friend Acts the Way They Do",
-    category: "Cat",
-    status: "Published",
-    image: null,
-    author: "Thompson P.",
-    description:
-      "Cats are fascinating creatures with unique behaviors that often leave their owners puzzled.",
-    content:
-      "Cats communicate through a complex language of meows, purrs, and body language. Understanding these signals helps strengthen the bond between you and your feline friend.",
-    date: "2024-09-11T00:00:00.000Z",
-  },
-  {
-    id: "2",
-    title: "The Fascinating World of Cats: Why We Love Our Furry Friends",
-    category: "Cat",
-    status: "Published",
-    image: null,
-    author: "Thompson P.",
-    description:
-      "Discover why cats have captured human hearts for thousands of years.",
-    content:
-      "1. Independent Yet Affectionate\nCats balance independence with deep affection for their humans.\n\n2. Playful Personalities\nTheir curiosity and playfulness make every day entertaining.",
-    date: "2024-09-10T00:00:00.000Z",
-  },
-  {
-    id: "3",
-    title: "Finding Strength in Adversity: Stories of Resilience",
-    category: "Inspiration",
-    status: "Published",
-    image: null,
-    author: "Thompson P.",
-    description:
-      "Real stories of people who turned challenges into growth.",
-    content:
-      "Resilience is not about avoiding hardship—it is about how we respond when life gets difficult. These stories remind us that strength can be found in the most unexpected places.",
-    date: "2024-09-08T00:00:00.000Z",
-  },
-  {
-    id: "4",
-    title: "The Science of Happiness: What Makes Us Smile",
-    category: "General",
-    status: "Published",
-    image: null,
-    author: "Thompson P.",
-    description:
-      "A look at the research behind everyday joy and well-being.",
-    content:
-      "Scientists have studied happiness for decades. Small habits—gratitude, connection, and movement—often matter more than big milestones.",
-    date: "2024-09-05T00:00:00.000Z",
-  },
-  {
-    id: "5",
-    title: "Exploring the Unknown: Adventures in Everyday Life",
-    category: "General",
-    status: "Draft",
-    image: null,
-    author: "Thompson P.",
-    description:
-      "How to find adventure without leaving your neighborhood.",
-    content:
-      "Adventure does not always require a passport. Trying a new café, walking a different route, or learning a skill can open new worlds close to home.",
-    date: "2024-09-03T00:00:00.000Z",
-  },
-  {
-    id: "6",
-    title: "How Cats Communicate: Decoding Meows and Body Language",
-    category: "Cat",
-    status: "Draft",
-    image: null,
-    author: "Thompson P.",
-    description:
-      "A practical guide to reading your cat’s signals.",
-    content:
-      "From slow blinks to tail flicks, cats share how they feel. Learn the cues that mean “I trust you” versus “give me space.”",
-    date: "2024-09-01T00:00:00.000Z",
-  },
-];
+const DRAFT_PLACEHOLDER_IMAGE =
+  "https://placehold.co/1200x675/e8e2d9/534b42?text=Draft";
 
-function readJson(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function ensureSeeded() {
-  const existing = readJson(ARTICLES_KEY, null);
-  if (existing === null) {
-    writeJson(ARTICLES_KEY, SEED_ARTICLES);
-    return SEED_ARTICLES;
-  }
-  return existing;
-}
-
-// read all admin articles from localStorage
-export function getArticles() {
-  return ensureSeeded();
-}
-
-// read one admin article by id
-export function getArticle(id) {
-  return getArticles().find((article) => String(article.id) === String(id)) ?? null;
-}
-
-function nextId(articles) {
-  const maxId = articles.reduce((max, article) => {
-    const numeric = Number(article.id);
-    return Number.isFinite(numeric) ? Math.max(max, numeric) : max;
-  }, 0);
-  return String(maxId + 1);
-}
-
-// create a new admin article in localStorage
-export function createArticle(data) {
-  const articles = getArticles();
-  const article = {
-    id: nextId(articles),
-    title: data.title?.trim() ?? "",
-    category: data.category ?? "",
-    status: data.status === "Published" ? "Published" : "Draft",
-    image: data.image ?? null,
-    author: data.author?.trim() ?? "",
-    description: data.description?.trim() ?? "",
-    content: data.content?.trim() ?? "",
-    date: new Date().toISOString(),
+function mapPostToArticle(post) {
+  return {
+    id: String(post.id),
+    title: post.title ?? "",
+    category: post.category ?? "",
+    status: statusLabelFromDb(post.status),
+    image: post.image ?? null,
+    description: post.description ?? "",
+    content: post.content ?? "",
+    date: post.date,
+    category_id: post.category_id,
+    status_id: post.status_id,
+    likes_count: post.likes_count ?? 0,
   };
-  writeJson(ARTICLES_KEY, [article, ...articles]);
-  return article;
 }
 
-// update an existing admin article in localStorage
-export function updateArticle(id, data) {
-  const articles = getArticles();
-  const index = articles.findIndex(
-    (article) => String(article.id) === String(id),
-  );
-  if (index === -1) {
-    return null;
-  }
+export async function getArticles({
+  keyword,
+  category,
+  status = "all",
+  page = 1,
+  limit = 100,
+} = {}) {
+  const statusParam =
+    status === "published"
+      ? "publish"
+      : status === "draft"
+        ? "draft"
+        : "all";
 
-  const updated = {
-    ...articles[index],
-    title: data.title?.trim() ?? articles[index].title,
-    category: data.category ?? articles[index].category,
-    status:
-      data.status === "Published"
-        ? "Published"
-        : data.status === "Draft"
-          ? "Draft"
-          : articles[index].status,
-    image: data.image !== undefined ? data.image : articles[index].image,
-    author: data.author?.trim() ?? articles[index].author,
-    description:
-      data.description !== undefined
-        ? data.description.trim()
-        : articles[index].description,
-    content:
-      data.content !== undefined
-        ? data.content.trim()
-        : articles[index].content,
-  };
-
-  const next = [...articles];
-  next[index] = updated;
-  writeJson(ARTICLES_KEY, next);
-  return updated;
-}
-
-// delete an admin article from localStorage
-export function deleteArticle(id) {
-  const articles = getArticles();
-  const next = articles.filter(
-    (article) => String(article.id) !== String(id),
-  );
-  if (next.length === articles.length) {
-    return false;
-  }
-  writeJson(ARTICLES_KEY, next);
-  return true;
-}
-
-// rename category on all articles that use the old name
-export function renameArticlesCategory(oldName, newName) {
-  const articles = getArticles();
-  let changed = false;
-  const next = articles.map((article) => {
-    if (article.category === oldName) {
-      changed = true;
-      return { ...article, category: newName };
-    }
-    return article;
+  const data = await fetchPosts({
+    keyword,
+    category: category === "all" ? undefined : category,
+    status: statusParam,
+    page,
+    limit,
   });
-  if (changed) {
-    writeJson(ARTICLES_KEY, next);
+
+  return (data.posts ?? []).map(mapPostToArticle);
+}
+
+export async function getArticle(id) {
+  const post = await fetchPost(id);
+  return mapPostToArticle(post);
+}
+
+async function resolveIds({ categoryName, statusLabel }) {
+  const [categories, statuses] = await Promise.all([
+    fetchCategories(),
+    fetchStatuses(),
+  ]);
+
+  let category = null;
+
+  if (categoryName) {
+    category = categories.find(
+      (item) => item.name.toLowerCase() === categoryName.toLowerCase(),
+    );
   }
+
+  if (!category) {
+    category = categories[0] ?? null;
+  }
+
+  if (!category) {
+    throw new Error("No categories available. Create a category first.");
+  }
+
+  const status_id = statusIdFromLabel(statuses, statusLabel);
+  if (!status_id) {
+    throw new Error("Selected status was not found");
+  }
+
+  return { category_id: category.id, status_id };
+}
+
+export async function saveArticle({
+  id,
+  title,
+  category,
+  description,
+  content,
+  image,
+  imageFile,
+  status,
+}) {
+  let imageUrl = image;
+
+  if (imageFile instanceof File) {
+    imageUrl = await uploadPostImage(imageFile);
+  }
+
+  if (!imageUrl) {
+    imageUrl = DRAFT_PLACEHOLDER_IMAGE;
+  }
+
+  const { category_id, status_id } = await resolveIds({
+    categoryName: category,
+    statusLabel: status,
+  });
+
+  const payload = {
+    title: title.trim(),
+    image: imageUrl,
+    category_id,
+    description: description?.trim() || "(No introduction)",
+    content: content?.trim() || "(No content)",
+    status_id,
+  };
+
+  if (id) {
+    await updatePost(id, payload);
+    return { id: String(id), image: imageUrl };
+  }
+
+  await createPost(payload);
+  return { image: imageUrl };
+}
+
+export async function removeArticle(id) {
+  await deletePost(id);
+  return true;
 }

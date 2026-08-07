@@ -1,210 +1,156 @@
-const USERS_KEY = "registeredUsers";
-const SESSION_KEY = "currentUser";
+import api, { getApiErrorField, getApiErrorMessage } from "@/lib/api";
+import {
+  clearTokens,
+  getCachedUser,
+  setCachedUser,
+  setTokens,
+} from "@/lib/tokenStorage";
 
-function readJson(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
-  }
-}
+export function toSessionUser(user) {
+  if (!user) return null;
 
-function writeJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
-}
-
-function toSessionUser(user) {
   return {
+    id: user.id,
     name: user.name,
     username: user.username,
     email: user.email,
-    avatar: user.avatar ?? null,
+    avatar: user.profile_pic ?? user.avatar ?? null,
     role: user.role === "admin" ? "admin" : "user",
   };
 }
 
-const ADMIN_EMAIL = "best@gmail.com";
-const ADMIN_PASSWORD = "123456";
+function saveSession(payload) {
+  const sessionUser = toSessionUser(payload.user);
 
-// seed or refresh the default admin account in localStorage
-export function ensureAdminUser() {
-  const users = getRegisteredUsers();
-  const index = users.findIndex(
-    (u) => u.email.toLowerCase() === ADMIN_EMAIL,
-  );
-
-  const adminUser = {
-    name: "Thompson P.",
-    username: "admin",
-    email: ADMIN_EMAIL,
-    password: ADMIN_PASSWORD,
-    avatar: null,
-    role: "admin",
-  };
-
-  if (index === -1) {
-    writeJson(USERS_KEY, [...users, adminUser]);
-    return;
+  if (payload.access_token) {
+    setTokens({
+      access_token: payload.access_token,
+      refresh_token: payload.refresh_token,
+    });
   }
 
-  const nextUsers = [...users];
-  nextUsers[index] = {
-    ...nextUsers[index],
-    password: ADMIN_PASSWORD,
-    role: "admin",
-  };
-  writeJson(USERS_KEY, nextUsers);
-
-  const session = getCurrentUser();
-  if (session?.email?.toLowerCase() === ADMIN_EMAIL) {
-    writeJson(SESSION_KEY, toSessionUser(nextUsers[index]));
-  }
+  setCachedUser(sessionUser);
+  return sessionUser;
 }
 
-// read all registered users from localStorage
-export function getRegisteredUsers() {
-  return readJson(USERS_KEY, []);
-}
-
-// read the current session user from localStorage
 export function getCurrentUser() {
-  return readJson(SESSION_KEY, null);
+  return getCachedUser();
 }
 
-// check whether a session user is stored
-export function isLoggedIn() {
-  return getCurrentUser() !== null;
-}
+export async function registerUser({ name, username, email, password }) {
+  try {
+    const { data } = await api.post("/auth/register", {
+      name,
+      username,
+      email,
+      password,
+    });
 
-// register a new user in localStorage
-export function registerUser({ name, username, email, password }) {
-  const users = getRegisteredUsers();
-  const normalizedEmail = email.trim().toLowerCase();
-  const normalizedUsername = username.trim().toLowerCase();
+    if (data.access_token) {
+      saveSession(data);
+    }
 
-  if (users.some((u) => u.email.toLowerCase() === normalizedEmail)) {
-    return { success: false, field: "email", message: "Email is already registered" };
+    return { success: true, user: toSessionUser(data.user) };
+  } catch (error) {
+    return {
+      success: false,
+      field: getApiErrorField(error),
+      message: getApiErrorMessage(error, "Registration failed"),
+    };
   }
-
-  if (users.some((u) => u.username.toLowerCase() === normalizedUsername)) {
-    return { success: false, field: "username", message: "Username is already taken" };
-  }
-
-  const newUser = {
-    name: name.trim(),
-    username: username.trim(),
-    email: normalizedEmail,
-    password,
-    avatar: null,
-    role: "user",
-  };
-
-  writeJson(USERS_KEY, [...users, newUser]);
-
-  return { success: true, user: toSessionUser(newUser) };
 }
 
-// log in and store the session user in localStorage
-export function loginUser({ email, password }) {
-  const users = getRegisteredUsers();
-  const normalizedEmail = email.trim().toLowerCase();
-  const user = users.find(
-    (u) => u.email.toLowerCase() === normalizedEmail && u.password === password,
-  );
-
-  if (!user) {
-    return { success: false, message: "Invalid email or password" };
+export async function loginUser({ email, password }) {
+  try {
+    const { data } = await api.post("/auth/login", { email, password });
+    const user = saveSession(data);
+    return { success: true, user };
+  } catch (error) {
+    return {
+      success: false,
+      message: getApiErrorMessage(error, "Invalid email or password"),
+    };
   }
-
-  const sessionUser = toSessionUser(user);
-
-  writeJson(SESSION_KEY, sessionUser);
-
-  return { success: true, user: sessionUser };
 }
 
-// clear the current session from localStorage
 export function logoutUser() {
-  localStorage.removeItem(SESSION_KEY);
+  clearTokens();
 }
 
-// update the logged-in user's profile in localStorage
-export function updateProfile({ name, username, avatar }) {
-  const session = getCurrentUser();
-  if (!session) {
-    return { success: false, message: "You must be logged in" };
-  }
-
-  const users = getRegisteredUsers();
-  const index = users.findIndex(
-    (u) => u.email.toLowerCase() === session.email.toLowerCase(),
-  );
-
-  if (index === -1) {
-    return { success: false, message: "User not found" };
-  }
-
-  const trimmedUsername = username.trim();
-  const normalizedUsername = trimmedUsername.toLowerCase();
-
-  const usernameTaken = users.some(
-    (u, i) =>
-      i !== index && u.username.toLowerCase() === normalizedUsername,
-  );
-
-  if (usernameTaken) {
+export async function fetchCurrentUser() {
+  try {
+    const { data } = await api.get("/auth/get-user");
+    const user = toSessionUser(data.user);
+    setCachedUser(user);
+    return { success: true, user };
+  } catch (error) {
+    clearTokens();
     return {
       success: false,
-      field: "username",
-      message: "Username is already taken",
+      message: getApiErrorMessage(error, "Session expired"),
     };
   }
-
-  const updatedUser = {
-    ...users[index],
-    name: name.trim(),
-    username: trimmedUsername,
-    avatar: avatar === undefined ? (users[index].avatar ?? null) : avatar,
-  };
-
-  const nextUsers = [...users];
-  nextUsers[index] = updatedUser;
-  writeJson(USERS_KEY, nextUsers);
-
-  const sessionUser = toSessionUser(updatedUser);
-  writeJson(SESSION_KEY, sessionUser);
-
-  return { success: true, user: sessionUser };
 }
 
-// change the logged-in user's password in localStorage
-export function changePassword({ currentPassword, newPassword }) {
-  const session = getCurrentUser();
-  if (!session) {
-    return { success: false, message: "You must be logged in" };
-  }
+export async function updateProfile({ name, username, avatar }) {
+  try {
+    const body = { name, username };
 
-  const users = getRegisteredUsers();
-  const index = users.findIndex(
-    (u) => u.email.toLowerCase() === session.email.toLowerCase(),
-  );
+    // Only include profile_pic when explicitly provided (undefined = leave unchanged)
+    if (avatar !== undefined) {
+      body.profile_pic = avatar;
+    }
 
-  if (index === -1) {
-    return { success: false, message: "User not found" };
-  }
+    const { data } = await api.put("/auth/profile", body);
 
-  if (users[index].password !== currentPassword) {
+    const user = toSessionUser(data.user);
+    setCachedUser(user);
+    return { success: true, user };
+  } catch (error) {
     return {
       success: false,
-      field: "currentPassword",
-      message: "Current password is incorrect",
+      field: getApiErrorField(error),
+      message: getApiErrorMessage(error, "Failed to update profile"),
     };
   }
+}
 
-  const nextUsers = [...users];
-  nextUsers[index] = { ...users[index], password: newPassword };
-  writeJson(USERS_KEY, nextUsers);
+export async function changePassword({ currentPassword, newPassword }) {
+  try {
+    await api.post("/auth/reset-password", {
+      currentPassword,
+      newPassword,
+    });
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      field: getApiErrorField(error),
+      message: getApiErrorMessage(error, "Failed to reset password"),
+    };
+  }
+}
 
-  return { success: true };
+export async function uploadAvatar(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  try {
+    // Do not set Content-Type manually — browser must include the multipart boundary
+    const { data } = await api.post("/uploads/avatar", formData);
+
+    if (!data?.url || typeof data.url !== "string") {
+      return {
+        success: false,
+        message: "Upload succeeded but no image URL was returned",
+      };
+    }
+
+    return { success: true, url: data.url };
+  } catch (error) {
+    return {
+      success: false,
+      message: getApiErrorMessage(error, "Failed to upload avatar"),
+    };
+  }
 }

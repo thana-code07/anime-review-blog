@@ -10,8 +10,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
-
-const DEFAULT_AVATAR = "/default-avatar.png";
+import { DEFAULT_AVATAR } from "@/lib/constants";
 
 function Avatar({ size = "md", alt, src }) {
   const sizeClass = size === "lg" ? "size-12" : "size-10";

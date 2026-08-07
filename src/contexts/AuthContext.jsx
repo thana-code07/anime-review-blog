@@ -1,31 +1,72 @@
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   changePassword as changePasswordUser,
-  ensureAdminUser,
+  fetchCurrentUser,
   getCurrentUser,
   loginUser,
   logoutUser,
   registerUser,
   updateProfile as updateProfileUser,
+  uploadAvatar,
 } from "@/lib/auth";
+import { getAccessToken } from "@/lib/tokenStorage";
 
 const AuthContext = createContext(null);
 
 // provides auth state and login/logout/profile helpers to the app
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    ensureAdminUser();
-    return getCurrentUser();
-  });
+  const [user, setUser] = useState(() => getCurrentUser());
+  const [isBootstrapping, setIsBootstrapping] = useState(() =>
+    Boolean(getAccessToken()),
+  );
 
-  const register = useCallback((credentials) => {
-    const result = registerUser(credentials);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function restoreSession() {
+      if (!getAccessToken()) {
+        setIsBootstrapping(false);
+        return;
+      }
+
+      const result = await fetchCurrentUser();
+
+      if (cancelled) return;
+
+      if (result.success) {
+        setUser(result.user);
+      } else {
+        setUser(null);
+      }
+
+      setIsBootstrapping(false);
+    }
+
+    restoreSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const register = useCallback(async (credentials) => {
+    const result = await registerUser(credentials);
+    if (result.success && result.user && getAccessToken()) {
+      setUser(result.user);
+    }
     return result;
   }, []);
 
-  const login = useCallback((credentials) => {
-    const result = loginUser(credentials);
+  const login = useCallback(async (credentials) => {
+    const result = await loginUser(credentials);
     if (result.success) {
       setUser(result.user);
     }
@@ -37,15 +78,37 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
-  const updateProfile = useCallback((profile) => {
-    const result = updateProfileUser(profile);
+  const updateProfile = useCallback(async (profile) => {
+    const payload = {
+      name: profile.name,
+      username: profile.username,
+    };
+
+    if (profile.avatarFile instanceof File) {
+      const uploadResult = await uploadAvatar(profile.avatarFile);
+      if (!uploadResult.success) {
+        return uploadResult;
+      }
+      if (!uploadResult.url) {
+        return {
+          success: false,
+          message: "Upload succeeded but no image URL was returned",
+        };
+      }
+      payload.avatar = uploadResult.url;
+    }
+    // No new file: omit avatar so the server keeps the existing profile_pic
+
+    const result = await updateProfileUser(payload);
+
     if (result.success) {
       setUser(result.user);
     }
+
     return result;
   }, []);
 
-  const changePassword = useCallback((passwords) => {
+  const changePassword = useCallback(async (passwords) => {
     return changePasswordUser(passwords);
   }, []);
 
@@ -54,13 +117,22 @@ export function AuthProvider({ children }) {
       user,
       isLoggedIn: user !== null,
       isAdmin: user?.role === "admin",
+      isBootstrapping,
       register,
       login,
       logout,
       updateProfile,
       changePassword,
     }),
-    [user, register, login, logout, updateProfile, changePassword],
+    [
+      user,
+      isBootstrapping,
+      register,
+      login,
+      logout,
+      updateProfile,
+      changePassword,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

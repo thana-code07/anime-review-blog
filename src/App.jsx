@@ -1,10 +1,10 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
-import { AccountLayout } from "@/components/AccountLayout";
+import { AccountLayout } from "@/components/layout/AccountLayout";
 import {
   AdminCenteredFormLayout,
   AdminLayout,
-} from "@/components/AdminLayout";
+} from "@/components/layout/AdminLayout";
 import { Toaster } from "@/components/ui/sonner";
 import { AdminArticleFormPage } from "./pages/admin/AdminArticleFormPage";
 import { AdminArticlesPage } from "./pages/admin/AdminArticlesPage";
@@ -18,12 +18,14 @@ import { ProfilePage } from "./pages/ProfilePage";
 import { RegistrationSuccessPage } from "./pages/RegistrationSuccessPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { SignUpPage } from "./pages/SignUpPage";
+import HealthTestPage from "./pages/HealthTestPage";
 
 function App() {
   return (
     <>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/test-health" element={<HealthTestPage />} />
         <Route path="/post/:postId" element={<BlogPostPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/signup/success" element={<RegistrationSuccessPage />} />

@@ -1,41 +1,19 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { ResetPasswordDialog } from "@/components/ResetPasswordDialog";
+import { FormField } from "@/components/forms/FormField";
+import { ResetPasswordDialog } from "@/components/auth/ResetPasswordDialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { inputClassName, successToastClassNames } from "@/lib/constants";
 import { validateResetPasswordForm } from "@/lib/validation";
-
-const inputClassName =
-  "h-12 border-border bg-white px-4 py-3 text-base md:text-base";
-
-const successToastClassNames = {
-  toast: "bg-[#31dc70] text-white border-none",
-  title: "text-white font-bold text-lg",
-  description: "!text-white text-[15px] leading-normal",
-  closeButton:
-    "!bg-transparent !border-none !text-white !shadow-none !left-auto !right-3 !top-3 !transform-none rounded",
-};
 
 const emptyForm = {
   currentPassword: "",
   newPassword: "",
   confirmPassword: "",
 };
-
-function FormField({ id, label, error, children }) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-brown-600">
-        {label}
-      </Label>
-      {children}
-      {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
-  );
-}
 
 // change password form for logged-in users
 export function ResetPasswordPage() {
@@ -63,8 +41,8 @@ export function ResetPasswordPage() {
     setConfirmOpen(true);
   }
 
-  function handleConfirmReset() {
-    const result = changePassword({
+  async function handleConfirmReset() {
+    const result = await changePassword({
       currentPassword: form.currentPassword,
       newPassword: form.newPassword,
     });

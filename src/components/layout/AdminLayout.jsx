@@ -54,8 +54,12 @@ function SidebarLink({ to, label, icon: Icon, disabled, end }) {
 
 // admin panel shell with sidebar nav and outlet
 export function AdminLayout() {
-  const { isLoggedIn, isAdmin, logout } = useAuth();
+  const { isLoggedIn, isAdmin, isBootstrapping, logout } = useAuth();
   const navigate = useNavigate();
+
+  if (isBootstrapping) {
+    return null;
+  }
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;

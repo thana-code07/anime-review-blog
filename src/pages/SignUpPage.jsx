@@ -1,27 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
-import { Navbar } from "@/components/Navbar";
+import { FormField } from "@/components/forms/FormField";
+import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { inputClassName } from "@/lib/constants";
 import { validateSignUpForm } from "@/lib/validation";
-
-const inputClassName =
-  "h-12 border-border bg-white px-4 py-3 text-base md:text-base";
-
-function FormField({ id, label, error, children }) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-brown-900">
-        {label}
-      </Label>
-      {children}
-      {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
-  );
-}
 
 // registration form for new users
 export function SignUpPage() {
@@ -35,6 +21,7 @@ export function SignUpPage() {
     password: "",
   });
   const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleChange(field) {
     return (event) => {
@@ -43,7 +30,7 @@ export function SignUpPage() {
     };
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     const validationErrors = validateSignUpForm(form);
@@ -52,9 +39,16 @@ export function SignUpPage() {
       return;
     }
 
-    const result = register(form);
+    setIsSubmitting(true);
+    const result = await register(form);
+    setIsSubmitting(false);
+
     if (!result.success) {
-      setErrors({ [result.field]: result.message });
+      if (result.field) {
+        setErrors({ [result.field]: result.message });
+      } else {
+        setErrors({ email: result.message });
+      }
       return;
     }
 
@@ -72,7 +66,12 @@ export function SignUpPage() {
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            <FormField id="name" label="Name" error={errors.name}>
+            <FormField
+              id="name"
+              label="Name"
+              error={errors.name}
+              labelClassName="text-brown-900"
+            >
               <Input
                 id="name"
                 type="text"
@@ -84,7 +83,12 @@ export function SignUpPage() {
               />
             </FormField>
 
-            <FormField id="username" label="Username" error={errors.username}>
+            <FormField
+              id="username"
+              label="Username"
+              error={errors.username}
+              labelClassName="text-brown-900"
+            >
               <Input
                 id="username"
                 type="text"
@@ -96,7 +100,12 @@ export function SignUpPage() {
               />
             </FormField>
 
-            <FormField id="email" label="Email" error={errors.email}>
+            <FormField
+              id="email"
+              label="Email"
+              error={errors.email}
+              labelClassName="text-brown-900"
+            >
               <Input
                 id="email"
                 type="email"
@@ -108,7 +117,12 @@ export function SignUpPage() {
               />
             </FormField>
 
-            <FormField id="password" label="Password" error={errors.password}>
+            <FormField
+              id="password"
+              label="Password"
+              error={errors.password}
+              labelClassName="text-brown-900"
+            >
               <Input
                 id="password"
                 type="password"
@@ -120,8 +134,13 @@ export function SignUpPage() {
               />
             </FormField>
 
-            <Button type="submit" variant="primary" className="mt-2 w-full">
-              Sign up
+            <Button
+              type="submit"
+              variant="primary"
+              className="mt-2 w-full"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Signing up..." : "Sign up"}
             </Button>
           </form>
 

@@ -3,30 +3,31 @@ import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-import { DeleteCategoryDialog } from "@/components/DeleteCategoryDialog";
+import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
-import {
-  deleteCategory,
-  getCategories,
-} from "@/lib/adminCategories";
-
-const successToastClassNames = {
-  toast: "bg-[#31dc70] text-white border-none",
-  title: "text-white font-bold text-lg",
-  description: "!text-white text-[15px] leading-normal",
-  closeButton:
-    "!bg-transparent !border-none !text-white !shadow-none !left-auto !right-3 !top-3 !transform-none rounded",
-};
+import { getApiErrorMessage } from "@/lib/api";
+import { deleteCategory, getCategories } from "@/lib/categoriesApi";
+import { successToastClassNames } from "@/lib/constants";
 
 // admin list of categories with search, edit, and delete
 export function AdminCategoriesPage() {
-  const [categories, setCategories] = useState(() => getCategories());
+  const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const refreshCategories = useCallback(() => {
-    setCategories(getCategories());
+  const refreshCategories = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const rows = await getCategories();
+      setCategories(rows);
+    } catch {
+      toast.error("Failed to load categories");
+      setCategories([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -41,19 +42,20 @@ export function AdminCategoriesPage() {
     );
   }, [categories, search]);
 
-  function handleDeleteConfirm() {
+  async function handleDeleteConfirm() {
     if (!deleteTarget) return;
-    const result = deleteCategory(deleteTarget.id);
-    setDeleteTarget(null);
-    if (result.error) {
-      toast.error(result.error);
-      return;
+    try {
+      await deleteCategory(deleteTarget.id);
+      setDeleteTarget(null);
+      await refreshCategories();
+      toast.success("Delete category", {
+        description: "Category has been successfully deleted.",
+        classNames: successToastClassNames,
+      });
+    } catch (error) {
+      setDeleteTarget(null);
+      toast.error(getApiErrorMessage(error, "Failed to delete category"));
     }
-    refreshCategories();
-    toast.success("Delete category", {
-      description: "Category has been successfully deleted.",
-      classNames: successToastClassNames,
-    });
   }
 
   return (
@@ -102,9 +104,7 @@ export function AdminCategoriesPage() {
             {filteredCategories.map((category, index) => (
               <tr
                 key={category.id}
-                className={
-                  index % 2 === 0 ? "bg-white" : "bg-brown-100/70"
-                }
+                className={index % 2 === 0 ? "bg-white" : "bg-brown-100/70"}
               >
                 <td className="px-4 py-4 text-base text-brown-900">
                   {category.name}
@@ -130,7 +130,7 @@ export function AdminCategoriesPage() {
                 </td>
               </tr>
             ))}
-            {filteredCategories.length === 0 && (
+            {!isLoading && filteredCategories.length === 0 && (
               <tr>
                 <td
                   colSpan={2}
@@ -140,16 +140,28 @@ export function AdminCategoriesPage() {
                 </td>
               </tr>
             )}
+            {isLoading && (
+              <tr>
+                <td
+                  colSpan={2}
+                  className="px-4 py-10 text-center text-base text-brown-600"
+                >
+                  Loading categories...
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      <DeleteCategoryDialog
+      <ConfirmDeleteDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
         }}
         onConfirm={handleDeleteConfirm}
+        title="Delete category"
+        description="Do you want to delete this category?"
       />
     </div>
   );

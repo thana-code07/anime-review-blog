@@ -2,28 +2,17 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
-import { Navbar } from "@/components/Navbar";
+import { FormField } from "@/components/forms/FormField";
+import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  errorToastClassNames,
+  inputClassName,
+} from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import { validateLoginForm } from "@/lib/validation";
-
-const inputClassName =
-  "h-12 border-border bg-white px-4 py-3 text-base md:text-base";
-
-function FormField({ id, label, error, children }) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id} className="text-brown-900">
-        {label}
-      </Label>
-      {children}
-      {error && <p className="text-sm text-destructive">{error}</p>}
-    </div>
-  );
-}
 
 // login form for email and password
 export function LoginPage() {
@@ -33,6 +22,7 @@ export function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [authFailed, setAuthFailed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleChange(field) {
     return (event) => {
@@ -42,7 +32,7 @@ export function LoginPage() {
     };
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     const validationErrors = validateLoginForm(form);
@@ -51,18 +41,15 @@ export function LoginPage() {
       return;
     }
 
-    const result = login(form);
+    setIsSubmitting(true);
+    const result = await login(form);
+    setIsSubmitting(false);
+
     if (!result.success) {
       setAuthFailed(true);
       toast.error("Your password is incorrect or this email doesn't exist", {
         description: "Please try another password or email",
-        classNames: {
-          toast: "bg-[#f87171] text-white border-none",
-          title: "text-white font-bold text-lg",
-          description: "!text-white text-[15px] leading-normal",
-          closeButton:
-            "!bg-transparent !border-none !text-white !shadow-none !left-auto !right-3 !top-3 !transform-none rounded",
-        },
+        classNames: errorToastClassNames,
       });
       return;
     }
@@ -83,7 +70,12 @@ export function LoginPage() {
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            <FormField id="email" label="Email" error={errors.email}>
+            <FormField
+              id="email"
+              label="Email"
+              error={errors.email}
+              labelClassName="text-brown-900"
+            >
               <Input
                 id="email"
                 type="email"
@@ -95,7 +87,12 @@ export function LoginPage() {
               />
             </FormField>
 
-            <FormField id="password" label="Password" error={errors.password}>
+            <FormField
+              id="password"
+              label="Password"
+              error={errors.password}
+              labelClassName="text-brown-900"
+            >
               <Input
                 id="password"
                 type="password"
@@ -107,8 +104,13 @@ export function LoginPage() {
               />
             </FormField>
 
-            <Button type="submit" variant="primary" className="mt-2 w-full">
-              Log in
+            <Button
+              type="submit"
+              variant="primary"
+              className="mt-2 w-full"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Logging in..." : "Log in"}
             </Button>
           </form>
 

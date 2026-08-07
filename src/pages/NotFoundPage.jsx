@@ -1,9 +1,9 @@
 import { CircleAlert } from "lucide-react";
 import { Link } from "react-router-dom";
 
-import { Navbar } from "../components/Navbar.jsx";
-import { FooterSection } from "../components/FooterSection.jsx";
-import { Button } from "../components/ui/Button.jsx";
+import { FooterSection } from "@/components/layout/FooterSection";
+import { Navbar } from "@/components/layout/Navbar";
+import { Button } from "@/components/ui/Button";
 
 // 404 page when a route is not found
 export function NotFoundPage() {

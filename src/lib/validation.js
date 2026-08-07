@@ -98,3 +98,32 @@ export function validateResetPasswordForm({
 
   return errors;
 }
+
+export const ARTICLE_INTRO_MAX_LENGTH = 120;
+
+// validate admin article create/edit form fields
+export function validateArticleForm(form, { requirePublishFields }) {
+  const errors = {};
+
+  if (!form.title.trim()) {
+    errors.title = "Title is required";
+  }
+
+  if (requirePublishFields) {
+    if (!form.category) {
+      errors.category = "Category is required";
+    }
+    if (!form.content.trim()) {
+      errors.content = "Content is required";
+    }
+    if (!form.image && !form.imageFile) {
+      errors.image = "Thumbnail image is required";
+    }
+  }
+
+  if (form.description.length > ARTICLE_INTRO_MAX_LENGTH) {
+    errors.description = `Introduction must be ${ARTICLE_INTRO_MAX_LENGTH} characters or fewer`;
+  }
+
+  return errors;
+}

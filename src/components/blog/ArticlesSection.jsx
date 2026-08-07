@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
 import { Label } from "@/components/ui/label";
-
 import {
   Select,
   SelectContent,
@@ -9,79 +8,81 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-import BlogCard from "@/components/BlogCard";
-
-import { ArticleSearch } from "@/components/ArticleSearch";
-
-import LoadingSpinner from "@/components/LoadingSpinner";
-
+import { ArticleSearch } from "@/components/blog/ArticleSearch";
+import BlogCard from "@/components/blog/BlogCard";
+import LoadingSpinner from "@/components/layout/LoadingSpinner";
 import { fetchPosts } from "@/lib/blogApi";
+import { fetchCategories } from "@/lib/categoriesApi";
 import { formatPostDate } from "@/lib/formatDate";
-
-const CATEGORIES = [
-  { value: "highlight", label: "Highlight" },
-
-  { value: "cat", label: "Cat" },
-
-  { value: "inspiration", label: "Inspiration" },
-
-  { value: "general", label: "General" },
-];
 
 function formatPosts(posts) {
   return posts.map((post) => ({
     ...post,
-
     date: formatPostDate(post.date),
   }));
 }
 
 // article list with category tabs, search, and pagination
 export function ArticlesSection() {
+  const [categories, setCategories] = useState([
+    { value: "highlight", label: "Highlight" },
+  ]);
   const [category, setCategory] = useState("highlight");
-
   const [posts, setPosts] = useState([]);
-
   const [page, setPage] = useState(1);
-
   const [hasMore, setHasMore] = useState(false);
-
   const [isLoading, setIsLoading] = useState(true);
-
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCategories() {
+      try {
+        const rows = await fetchCategories();
+        if (cancelled) return;
+
+        setCategories([
+          { value: "highlight", label: "Highlight" },
+          ...rows.map((item) => ({
+            value: item.name,
+            label: item.name,
+          })),
+        ]);
+      } catch {
+        if (!cancelled) {
+          setCategories([{ value: "highlight", label: "Highlight" }]);
+        }
+      }
+    }
+
+    loadCategories();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadPosts() {
       setIsLoading(true);
-
       setError(null);
-
       setPosts([]);
-
       setPage(1);
-
       setHasMore(false);
 
       try {
         const data = await fetchPosts({ category, page: 1, limit: 6 });
-
         if (cancelled) return;
-
         setPosts(formatPosts(data.posts));
-
         setHasMore(data.nextPage != null);
       } catch {
         if (cancelled) return;
-
         setPosts([]);
-
         setError("Failed to load articles.");
       } finally {
         if (!cancelled) {
@@ -101,18 +102,13 @@ export function ArticlesSection() {
     if (isLoadingMore || !hasMore) return;
 
     setIsLoadingMore(true);
-
     setError(null);
 
     try {
       const nextPage = page + 1;
-
       const data = await fetchPosts({ category, page: nextPage, limit: 6 });
-
       setPosts((prev) => [...prev, ...formatPosts(data.posts)]);
-
       setPage(nextPage);
-
       setHasMore(data.nextPage != null);
     } catch {
       setError("Failed to load more articles.");
@@ -148,7 +144,7 @@ export function ArticlesSection() {
               </SelectTrigger>
 
               <SelectContent>
-                {CATEGORIES.map(({ value, label }) => (
+                {categories.map(({ value, label }) => (
                   <SelectItem key={value} value={value}>
                     {label}
                   </SelectItem>
@@ -161,7 +157,7 @@ export function ArticlesSection() {
         <div className="mt-6 hidden items-center justify-between gap-4 rounded-full bg-brown-100 px-4 py-3 lg:flex">
           <Tabs value={category} onValueChange={setCategory}>
             <TabsList className="h-auto gap-1 bg-transparent p-0">
-              {CATEGORIES.map(({ value, label }) => (
+              {categories.map(({ value, label }) => (
                 <TabsTrigger
                   key={value}
                   value={value}

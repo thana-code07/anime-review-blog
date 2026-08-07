@@ -1,11 +1,10 @@
 import { NavLink, Navigate, Outlet, useLocation } from "react-router-dom";
 import { RotateCcw, User } from "lucide-react";
 
-import { Navbar } from "@/components/Navbar";
+import { Navbar } from "@/components/layout/Navbar";
 import { useAuth } from "@/contexts/AuthContext";
+import { DEFAULT_AVATAR } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-
-const DEFAULT_AVATAR = "/default-avatar.png";
 
 const ACCOUNT_LINKS = [
   { to: "/profile", label: "Profile", icon: User },
@@ -45,8 +44,12 @@ function AccountNavLink({ to, label, icon: Icon, variant }) {
 
 // account pages shell with profile sidebar and outlet
 export function AccountLayout() {
-  const { user, isLoggedIn, isAdmin } = useAuth();
+  const { user, isLoggedIn, isAdmin, isBootstrapping } = useAuth();
   const location = useLocation();
+
+  if (isBootstrapping) {
+    return null;
+  }
 
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
