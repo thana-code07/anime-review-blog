@@ -84,10 +84,22 @@ export async function fetchCurrentUser() {
     setCachedUser(user);
     return { success: true, user };
   } catch (error) {
-    clearTokens();
+    const status = error.response?.status;
+    const isAuthFailure = status === 401 || status === 403;
+
+    if (isAuthFailure) {
+      clearTokens();
+      return {
+        success: false,
+        cleared: true,
+        message: getApiErrorMessage(error, "Session expired"),
+      };
+    }
+
     return {
       success: false,
-      message: getApiErrorMessage(error, "Session expired"),
+      cleared: false,
+      message: getApiErrorMessage(error, "Could not refresh session"),
     };
   }
 }
@@ -125,6 +137,7 @@ export async function changePassword({ currentPassword, newPassword }) {
   } catch (error) {
     return {
       success: false,
+      status: error.response?.status ?? null,
       field: getApiErrorField(error),
       message: getApiErrorMessage(error, "Failed to reset password"),
     };

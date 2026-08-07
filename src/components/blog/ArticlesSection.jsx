@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Label } from "@/components/ui/label";
 import {
@@ -35,6 +35,7 @@ export function ArticlesSection() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  const listRequestIdRef = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,7 +67,7 @@ export function ArticlesSection() {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    const requestId = ++listRequestIdRef.current;
 
     async function loadPosts() {
       setIsLoading(true);
@@ -74,46 +75,54 @@ export function ArticlesSection() {
       setPosts([]);
       setPage(1);
       setHasMore(false);
+      setIsLoadingMore(false);
 
       try {
         const data = await fetchPosts({ category, page: 1, limit: 6 });
-        if (cancelled) return;
+        if (requestId !== listRequestIdRef.current) return;
         setPosts(formatPosts(data.posts));
         setHasMore(data.nextPage != null);
       } catch {
-        if (cancelled) return;
+        if (requestId !== listRequestIdRef.current) return;
         setPosts([]);
         setError("Failed to load articles.");
       } finally {
-        if (!cancelled) {
+        if (requestId === listRequestIdRef.current) {
           setIsLoading(false);
         }
       }
     }
 
     loadPosts();
-
-    return () => {
-      cancelled = true;
-    };
   }, [category]);
 
   async function handleLoadMore() {
     if (isLoadingMore || !hasMore) return;
 
+    const requestId = listRequestIdRef.current;
+    const loadCategory = category;
+    const nextPage = page + 1;
+
     setIsLoadingMore(true);
     setError(null);
 
     try {
-      const nextPage = page + 1;
-      const data = await fetchPosts({ category, page: nextPage, limit: 6 });
+      const data = await fetchPosts({
+        category: loadCategory,
+        page: nextPage,
+        limit: 6,
+      });
+      if (requestId !== listRequestIdRef.current) return;
       setPosts((prev) => [...prev, ...formatPosts(data.posts)]);
       setPage(nextPage);
       setHasMore(data.nextPage != null);
     } catch {
+      if (requestId !== listRequestIdRef.current) return;
       setError("Failed to load more articles.");
     } finally {
-      setIsLoadingMore(false);
+      if (requestId === listRequestIdRef.current) {
+        setIsLoadingMore(false);
+      }
     }
   }
 

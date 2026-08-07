@@ -17,10 +17,11 @@ const emptyForm = {
 
 // change password form for logged-in users
 export function ResetPasswordPage() {
-  const { changePassword } = useAuth();
+  const { changePassword, logout } = useAuth();
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState({});
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleChange(field) {
     return (event) => {
@@ -42,31 +43,43 @@ export function ResetPasswordPage() {
   }
 
   async function handleConfirmReset() {
-    const result = await changePassword({
-      currentPassword: form.currentPassword,
-      newPassword: form.newPassword,
-    });
+    if (isSubmitting) return;
 
-    if (!result.success) {
-      setConfirmOpen(false);
-      if (result.field) {
-        setErrors({ [result.field]: result.message });
-      } else {
-        toast.error("Failed to reset password", {
-          description: result.message || "Please try again.",
-        });
+    setIsSubmitting(true);
+    try {
+      const result = await changePassword({
+        currentPassword: form.currentPassword,
+        newPassword: form.newPassword,
+      });
+
+      if (!result.success) {
+        setConfirmOpen(false);
+        if (result.field) {
+          setErrors({ [result.field]: result.message });
+        } else if (result.status === 401) {
+          logout();
+          toast.error("Session expired", {
+            description: "Please log in again to reset your password.",
+          });
+        } else {
+          toast.error("Failed to reset password", {
+            description: result.message || "Please try again.",
+          });
+        }
+        return;
       }
-      return;
+
+      setConfirmOpen(false);
+      setForm(emptyForm);
+      setErrors({});
+
+      toast.success("Password reset", {
+        description: "Your password has been successfully updated.",
+        classNames: successToastClassNames,
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setConfirmOpen(false);
-    setForm(emptyForm);
-    setErrors({});
-
-    toast.success("Password reset", {
-      description: "Your password has been successfully updated.",
-      classNames: successToastClassNames,
-    });
   }
 
   return (
@@ -125,6 +138,7 @@ export function ResetPasswordPage() {
             type="submit"
             variant="primary"
             className="rounded-full px-8"
+            disabled={isSubmitting}
           >
             Reset password
           </Button>
@@ -133,8 +147,11 @@ export function ResetPasswordPage() {
 
       <ResetPasswordDialog
         open={confirmOpen}
-        onOpenChange={setConfirmOpen}
+        onOpenChange={(open) => {
+          if (!isSubmitting) setConfirmOpen(open);
+        }}
         onConfirm={handleConfirmReset}
+        isSubmitting={isSubmitting}
       />
     </>
   );

@@ -62,22 +62,31 @@ export function BlogPostPage() {
       setComments([]);
 
       try {
-        const [data, commentRows] = await Promise.all([
-          fetchPost(postId),
-          fetchComments(postId),
-        ]);
+        const data = await fetchPost(postId);
         if (cancelled) return;
         setPost(data);
         setLiked(Boolean(data.liked_by_me));
         setLikesCount(data.likes_count ?? 0);
-        setComments(commentRows);
       } catch {
         if (cancelled) return;
         setError("Failed to load this article.");
+        return;
       } finally {
         if (!cancelled) {
           setIsLoading(false);
         }
+      }
+
+      try {
+        const commentRows = await fetchComments(postId);
+        if (cancelled) return;
+        setComments(commentRows);
+      } catch {
+        if (cancelled) return;
+        setComments([]);
+        toast.error("Failed to load comments", {
+          description: "The article loaded, but comments are unavailable.",
+        });
       }
     }
 

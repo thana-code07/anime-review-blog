@@ -17,6 +17,7 @@ import {
   updateProfile as updateProfileUser,
   uploadAvatar,
 } from "@/lib/auth";
+import { subscribeAuthCleared } from "@/lib/authEvents";
 import { getAccessToken } from "@/lib/tokenStorage";
 
 const AuthContext = createContext(null);
@@ -27,6 +28,12 @@ export function AuthProvider({ children }) {
   const [isBootstrapping, setIsBootstrapping] = useState(() =>
     Boolean(getAccessToken()),
   );
+
+  useEffect(() => {
+    return subscribeAuthCleared(() => {
+      setUser(null);
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,9 +50,11 @@ export function AuthProvider({ children }) {
 
       if (result.success) {
         setUser(result.user);
-      } else {
+      } else if (result.cleared) {
+        // Tokens were wiped for an auth failure — clear React session.
         setUser(null);
       }
+      // Soft failures (network/5xx): keep cached user; tokens still present.
 
       setIsBootstrapping(false);
     }

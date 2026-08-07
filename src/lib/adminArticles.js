@@ -70,20 +70,20 @@ async function resolveIds({ categoryName, statusLabel }) {
     fetchStatuses(),
   ]);
 
-  let category = null;
-
-  if (categoryName) {
-    category = categories.find(
-      (item) => item.name.toLowerCase() === categoryName.toLowerCase(),
-    );
+  if (!categoryName?.trim()) {
+    throw new Error("Select a category");
   }
 
-  if (!category) {
-    category = categories[0] ?? null;
-  }
-
-  if (!category) {
+  if (categories.length === 0) {
     throw new Error("No categories available. Create a category first.");
+  }
+
+  const category = categories.find(
+    (item) => item.name.toLowerCase() === categoryName.trim().toLowerCase(),
+  );
+
+  if (!category) {
+    throw new Error("Selected category was not found");
   }
 
   const status_id = statusIdFromLabel(statuses, statusLabel);

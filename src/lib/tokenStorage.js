@@ -1,3 +1,5 @@
+import { emitAuthCleared } from "@/lib/authEvents";
+
 const TOKENS_KEY = "authTokens";
 const SESSION_KEY = "currentUser";
 
@@ -32,6 +34,7 @@ export function setTokens({ access_token, refresh_token }) {
 export function clearTokens() {
   localStorage.removeItem(TOKENS_KEY);
   localStorage.removeItem(SESSION_KEY);
+  emitAuthCleared();
 }
 
 export function getCachedUser() {
