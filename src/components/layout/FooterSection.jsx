@@ -31,7 +31,12 @@ function SocialIcon({ href, label, path }) {
       aria-label={label}
       className="inline-flex size-9 items-center justify-center rounded-full bg-brown-800 text-white transition-colors hover:bg-brown-900"
     >
-      <svg role="img" viewBox="0 0 24 24" className="size-4 fill-current" aria-hidden>
+      <svg
+        role="img"
+        viewBox="0 0 24 24"
+        className="size-4 fill-current"
+        aria-hidden
+      >
         <path d={path} />
       </svg>
     </a>
@@ -41,23 +46,34 @@ function SocialIcon({ href, label, path }) {
 // site footer with brand, links, and social icons
 export function FooterSection() {
   return (
-    <footer className="w-full bg-brown-200" aria-label="Site footer">
-      <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 py-10 sm:px-8 sm:py-12 lg:flex-row lg:items-center lg:justify-between lg:px-[120px] lg:py-16">
-        <div className="flex flex-wrap items-center gap-4">
-          <span className="text-sm text-brown-800 sm:text-base">Get in touch</span>
+    <footer className="w-full border-t border-brown-300/70 bg-brown-200" aria-label="Site footer">
+      <div className="mx-auto flex max-w-[1440px] flex-col gap-8 px-4 py-12 sm:px-8 sm:py-14 lg:flex-row lg:items-end lg:justify-between lg:px-[120px] lg:py-16">
+        <div className="max-w-md">
+          <Link
+            to="/"
+            className="font-poppins text-2xl font-semibold text-brown-900 no-underline"
+          >
+            Best Thana<span className="text-green-500">.</span>
+          </Link>
+          <p className="mt-3 text-sm leading-relaxed text-brown-600 sm:text-base">
+            Honest anime reviews and seasonal picks—built for people who care
+            what they watch next.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
           <div className="flex items-center gap-2">
             {SOCIAL_LINKS.map(({ href, label, path }) => (
               <SocialIcon key={label} href={href} label={label} path={path} />
             ))}
           </div>
+          <Link
+            to="/"
+            className="text-sm font-medium text-brown-800 underline underline-offset-4 transition-colors hover:text-brown-900 sm:text-base"
+          >
+            Back to home
+          </Link>
         </div>
-
-        <Link
-          to="/"
-          className="text-sm text-brown-800 underline underline-offset-4 hover:text-brown-900 sm:text-base"
-        >
-          Home page
-        </Link>
       </div>
     </footer>
   );

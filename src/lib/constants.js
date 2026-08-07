@@ -1,5 +1,10 @@
 export const DEFAULT_AVATAR = "/default-avatar.png";
 
+export const AUTHOR_BIO_PARAGRAPHS = [
+  "When I have free time, I watch anime and spend too long wondering if a show is actually good. This site exists to cut that noise—and help you find your next 10/10.",
+  "I'm learning to code and building websites. This is my first React project. I hope you like it.",
+];
+
 export const inputClassName =
   "h-12 border-border bg-white px-4 py-3 text-base md:text-base";
 

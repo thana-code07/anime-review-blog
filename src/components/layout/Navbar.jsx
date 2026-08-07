@@ -22,7 +22,7 @@ export function Navbar() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-white">
+    <header className="sticky top-0 z-50 border-b border-brown-300/60 bg-brown-100/85 backdrop-blur-md transition-colors">
       <Collapsible open={open} onOpenChange={setOpen}>
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 lg:h-20 lg:px-[120px]">
           <Logo />
@@ -61,7 +61,7 @@ export function Navbar() {
           </CollapsibleTrigger>
         </div>
 
-        <CollapsibleContent className="border-t border-border md:hidden">
+        <CollapsibleContent className="border-t border-brown-300/60 bg-brown-100 md:hidden">
           {isLoggedIn ? (
             <UserMenu variant="mobile" onNavigate={closeMenu} />
           ) : (

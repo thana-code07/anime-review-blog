@@ -56,12 +56,19 @@ export function SignUpPage() {
   }
 
   return (
-    <div className="min-h-svh bg-brown-100">
+    <div className="relative min-h-svh overflow-hidden bg-brown-100">
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgb(218_214_209/0.55),_transparent_55%),radial-gradient(ellipse_at_bottom_right,_rgb(146_111_84/0.12),_transparent_45%)]"
+        aria-hidden
+      />
       <Navbar />
 
-      <main className="flex flex-1 items-center justify-center px-4 py-12">
-        <div className="w-full max-w-[480px] rounded-2xl bg-brown-200/40 p-8 sm:p-10">
-          <h1 className="mb-8 text-center text-2xl font-bold text-brown-900">
+      <main className="relative flex flex-1 items-center justify-center px-4 py-14 sm:py-16">
+        <div className="w-full max-w-[480px] rounded-3xl border border-brown-300/70 bg-brown-100/90 p-8 shadow-[0_20px_60px_rgb(38_35_30/0.06)] backdrop-blur-sm sm:p-10">
+          <p className="mb-2 text-center font-poppins text-sm font-semibold text-brown-900">
+            Best Thana<span className="text-green-500">.</span>
+          </p>
+          <h1 className="mb-8 text-center font-poppins text-2xl font-bold tracking-tight text-brown-900">
             Sign up
           </h1>
 

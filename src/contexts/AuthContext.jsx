@@ -18,6 +18,7 @@ import {
   uploadAvatar,
 } from "@/lib/auth";
 import { subscribeAuthCleared } from "@/lib/authEvents";
+import { clearSiteAuthorAvatarCache } from "@/lib/siteAuthor";
 import { getAccessToken } from "@/lib/tokenStorage";
 
 const AuthContext = createContext(null);
@@ -112,6 +113,9 @@ export function AuthProvider({ children }) {
 
     if (result.success) {
       setUser(result.user);
+      if (payload.avatar !== undefined) {
+        clearSiteAuthorAvatarCache();
+      }
     }
 
     return result;

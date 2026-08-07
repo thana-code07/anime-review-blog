@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArticleSearch } from "@/components/blog/ArticleSearch";
 import BlogCard from "@/components/blog/BlogCard";
 import LoadingSpinner from "@/components/layout/LoadingSpinner";
+import { useSiteAuthorAvatar } from "@/hooks/useSiteAuthorAvatar";
 import { fetchPosts } from "@/lib/blogApi";
 import { fetchCategories } from "@/lib/categoriesApi";
 import { formatPostDate } from "@/lib/formatDate";
@@ -25,6 +26,7 @@ function formatPosts(posts) {
 
 // article list with category tabs, search, and pagination
 export function ArticlesSection() {
+  const authorAvatar = useSiteAuthorAvatar();
   const [categories, setCategories] = useState([
     { value: "highlight", label: "Highlight" },
   ]);
@@ -127,13 +129,17 @@ export function ArticlesSection() {
   }
 
   return (
-    <section className="w-full bg-brown-200" aria-label="Latest articles">
-      <div className="mx-auto max-w-[1440px] px-4 py-10 sm:px-8 sm:py-12 lg:px-[120px] lg:py-16">
-        <h2 className="font-poppins text-2xl font-bold text-brown-900 sm:text-[28px]">
+    <section
+      id="latest-articles"
+      className="w-full scroll-mt-24 bg-brown-200"
+      aria-label="Latest articles"
+    >
+      <div className="mx-auto max-w-[1440px] px-4 py-12 sm:px-8 sm:py-14 lg:px-[120px] lg:py-20">
+        <h2 className="font-poppins text-2xl font-bold tracking-tight text-brown-900 sm:text-[28px]">
           Latest articles
         </h2>
 
-        <div className="mt-6 flex flex-col gap-4 lg:hidden">
+        <div className="mt-8 flex flex-col gap-4 lg:hidden">
           <ArticleSearch />
 
           <div className="flex flex-col gap-2">
@@ -147,7 +153,7 @@ export function ArticlesSection() {
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger
                 id="article-category"
-                className="h-11 w-full rounded-xl border-brown-300 bg-white text-brown-900"
+                className="h-11 w-full rounded-xl border-brown-300 bg-brown-100 text-brown-900"
               >
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
@@ -163,14 +169,14 @@ export function ArticlesSection() {
           </div>
         </div>
 
-        <div className="mt-6 hidden items-center justify-between gap-4 rounded-full bg-brown-100 px-4 py-3 lg:flex">
+        <div className="mt-8 hidden items-center justify-between gap-4 rounded-full border border-brown-300/70 bg-brown-100/90 px-4 py-3 shadow-[0_1px_0_rgb(38_35_30/0.04)] lg:flex">
           <Tabs value={category} onValueChange={setCategory}>
             <TabsList className="h-auto gap-1 bg-transparent p-0">
               {categories.map(({ value, label }) => (
                 <TabsTrigger
                   key={value}
                   value={value}
-                  className="rounded-lg px-4 py-2 text-sm font-medium text-brown-600 data-active:bg-brown-300 data-active:text-brown-900 data-active:shadow-none"
+                  className="rounded-full px-4 py-2 text-sm font-medium text-brown-600 transition-colors hover:text-brown-900 data-active:bg-brown-900 data-active:text-white data-active:shadow-none data-active:hover:bg-brown-900 data-active:hover:text-white"
                 >
                   {label}
                 </TabsTrigger>
@@ -181,7 +187,7 @@ export function ArticlesSection() {
           <ArticleSearch />
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="mt-10 grid grid-cols-1 gap-8 md:grid-cols-2 md:gap-x-8 md:gap-y-12">
           {isLoading && (
             <div className="col-span-full flex justify-center py-16">
               <LoadingSpinner />
@@ -193,22 +199,27 @@ export function ArticlesSection() {
           {!isLoading &&
             !error &&
             posts.map((post) => (
-              <BlogCard key={post.id} id={post.id} {...post} />
+              <BlogCard
+                key={post.id}
+                id={post.id}
+                {...post}
+                authorAvatar={authorAvatar}
+              />
             ))}
         </div>
 
         {!isLoading && isLoadingMore && (
-          <div className="mt-10 flex justify-center">
+          <div className="mt-12 flex justify-center">
             <LoadingSpinner />
           </div>
         )}
 
         {!isLoading && !isLoadingMore && hasMore && (
-          <div className="mt-10 flex justify-center">
+          <div className="mt-12 flex justify-center">
             <button
               type="button"
               onClick={handleLoadMore}
-              className="rounded-xl bg-white px-10 py-3 text-brown-900 underline hover:text-brown-600 cursor-pointer"
+              className="cursor-pointer rounded-full border border-brown-900 bg-brown-100 px-10 py-3 text-brown-900 transition-colors hover:bg-brown-900 hover:text-white"
             >
               View more
             </button>

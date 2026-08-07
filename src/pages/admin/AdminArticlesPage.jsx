@@ -168,7 +168,7 @@ export function AdminArticlesPage() {
         </Select>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-brown-200">
+      <div className="overflow-hidden rounded-xl border border-brown-300/80 bg-brown-100 shadow-[0_1px_0_rgb(38_35_30/0.04)]">
         <table className="w-full min-w-[640px] border-collapse text-left">
           <thead>
             <tr className="border-b border-brown-200 bg-brown-100">
@@ -190,7 +190,7 @@ export function AdminArticlesPage() {
             {filteredArticles.map((article, index) => (
               <tr
                 key={article.id}
-                className={index % 2 === 0 ? "bg-white" : "bg-brown-100/70"}
+                className={index % 2 === 0 ? "bg-brown-100" : "bg-brown-200/50"}
               >
                 <td className="max-w-md px-4 py-4 text-base text-brown-900">
                   {article.title}

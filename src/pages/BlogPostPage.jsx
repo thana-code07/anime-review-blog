@@ -19,20 +19,16 @@ import {
   likePost,
   unlikePost,
 } from "@/lib/blogApi";
-import { successToastClassNames } from "@/lib/constants";
+import { useSiteAuthorAvatar } from "@/hooks/useSiteAuthorAvatar";
+import { AUTHOR_BIO_PARAGRAPHS, successToastClassNames } from "@/lib/constants";
 import { formatLikes, formatPostDate } from "@/lib/formatDate";
 import { buildShareUrl } from "@/lib/share";
-
-const AUTHOR_AVATAR =
-  "https://res.cloudinary.com/dcbpjtd1r/image/upload/v1728449784/my-blog-post/xgfy0xnvyemkklcqodkg.jpg";
-
-const AUTHOR_BIO =
-  "I am a pet enthusiast and freelance writer who specializes in animal behavior and care. With a deep love for cats, I enjoy sharing insights on feline companionship and wellness.";
 
 // single article page with likes, share, and comments
 export function BlogPostPage() {
   const { postId } = useParams();
   const { isLoggedIn } = useAuth();
+  const authorAvatar = useSiteAuthorAvatar();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -172,10 +168,10 @@ export function BlogPostPage() {
             <img
               src={post.image}
               alt={post.title}
-              className="aspect-video w-full rounded-2xl object-cover"
+              className="aspect-video w-full rounded-2xl object-cover shadow-[0_12px_40px_rgb(38_35_30/0.08)]"
             />
 
-            <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px] lg:gap-12">
+            <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_300px] lg:gap-14">
               <article>
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="rounded-full bg-green-200 px-3 py-1 text-sm font-semibold text-green-600">
@@ -186,24 +182,24 @@ export function BlogPostPage() {
                   </span>
                 </div>
 
-                <h1 className="mt-4 font-poppins text-3xl font-bold text-brown-900 sm:text-4xl">
+                <h1 className="mt-5 font-poppins text-3xl font-bold tracking-tight text-brown-900 sm:text-[2.5rem] sm:leading-tight">
                   {post.title}
                 </h1>
 
-                <div className="markdown mt-6 text-brown-800">
+                <div className="markdown mt-8">
                   <ReactMarkdown>{post.content}</ReactMarkdown>
                 </div>
 
-                <div className="mt-10 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-brown-200 px-4 py-3 sm:px-5">
+                <div className="mt-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-brown-300/80 bg-brown-200/70 px-4 py-3.5 sm:px-5">
                   <button
                     type="button"
                     onClick={() => requireAuth(handleLike)}
                     aria-pressed={liked}
                     disabled={isTogglingLike}
-                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brown-300 bg-white px-4 py-2 text-sm text-brown-900 transition-colors hover:bg-brown-100 disabled:opacity-60"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brown-300 bg-brown-100 px-4 py-2 text-sm text-brown-900 transition-colors hover:bg-white disabled:opacity-60"
                   >
                     <Heart
-                      className={`size-4 ${liked ? "fill-red-500 text-red-500" : ""}`}
+                      className={`size-4 ${liked ? "fill-brown-900 text-brown-900" : ""}`}
                     />
                     <span>{formatLikes(likesCount)}</span>
                   </button>
@@ -212,7 +208,7 @@ export function BlogPostPage() {
                     <button
                       type="button"
                       onClick={handleCopyLink}
-                      className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brown-300 bg-white px-4 py-2 text-sm text-brown-900 transition-colors hover:bg-brown-100"
+                      className="inline-flex shrink-0 items-center gap-2 rounded-full border border-brown-300 bg-brown-100 px-4 py-2 text-sm text-brown-900 transition-colors hover:bg-white"
                     >
                       <Link2 className="size-4" />
                       <span>Copy link</span>
@@ -220,7 +216,7 @@ export function BlogPostPage() {
 
                     <SocialShareButton
                       label="Share on Facebook"
-                      className="bg-[#1877F2]"
+                      className="bg-brown-800 hover:bg-brown-900"
                       href={buildShareUrl("facebook", articleUrl)}
                     >
                       <svg
@@ -233,7 +229,7 @@ export function BlogPostPage() {
                     </SocialShareButton>
                     <SocialShareButton
                       label="Share on LinkedIn"
-                      className="bg-[#0A66C2]"
+                      className="bg-brown-800 hover:bg-brown-900"
                       href={buildShareUrl("linkedin", articleUrl)}
                     >
                       <svg
@@ -246,7 +242,7 @@ export function BlogPostPage() {
                     </SocialShareButton>
                     <SocialShareButton
                       label="Share on Twitter"
-                      className="bg-[#1DA1F2]"
+                      className="bg-brown-800 hover:bg-brown-900"
                       href={buildShareUrl("twitter", articleUrl)}
                     >
                       <svg
@@ -302,20 +298,24 @@ export function BlogPostPage() {
                 </section>
               </article>
 
-              <aside className="lg:sticky lg:top-24 lg:self-start lg:pt-2">
-                <div className="rounded-2xl bg-brown-200 p-6">
+              <aside className="lg:sticky lg:top-28 lg:self-start lg:pt-2">
+                <div className="rounded-2xl border border-brown-300/70 bg-brown-200/80 p-6">
                   <img
-                    src={AUTHOR_AVATAR}
+                    src={authorAvatar}
                     alt="Author"
                     className="size-16 rounded-full object-cover"
                   />
-                  <p className="mt-4 text-sm text-brown-600">Author</p>
-                  <p className="mt-1 font-semibold text-brown-900">
-                    Best Thana.
+                  <p className="mt-4 text-sm tracking-wide text-brown-500 uppercase">
+                    Author
                   </p>
-                  <p className="mt-3 text-sm leading-relaxed text-brown-800">
-                    {AUTHOR_BIO}
+                  <p className="mt-1 font-poppins text-lg font-semibold text-brown-900">
+                    Best Thana<span className="text-green-500">.</span>
                   </p>
+                  <div className="mt-3 space-y-3 text-sm leading-relaxed text-brown-600">
+                    {AUTHOR_BIO_PARAGRAPHS.map((paragraph) => (
+                      <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+                    ))}
+                  </div>
                 </div>
               </aside>
             </div>
