@@ -16,7 +16,7 @@ const PRIMARY_LINKS = [
   { to: "/admin/articles", label: "Article management", icon: FileText },
   { to: "/admin/categories", label: "Category management", icon: Folder },
   { to: "/admin/profile", label: "Profile", icon: User },
-  { to: "/admin/notifications", label: "Notification", icon: Bell, disabled: true },
+  { to: "/admin/notifications", label: "Notification", icon: Bell },
   { to: "/admin/reset-password", label: "Reset password", icon: RotateCcw },
 ];
 

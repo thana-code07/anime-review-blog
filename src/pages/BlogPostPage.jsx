@@ -93,6 +93,19 @@ export function BlogPostPage() {
     };
   }, [postId]);
 
+  useEffect(() => {
+    if (isLoading || !post) {
+      return;
+    }
+
+    if (window.location.hash !== "#comments") {
+      return;
+    }
+
+    const commentsSection = document.getElementById("comments");
+    commentsSection?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [isLoading, post]);
+
   const articleUrl = window.location.href;
 
   async function handleLike() {
@@ -256,7 +269,11 @@ export function BlogPostPage() {
                   </div>
                 </div>
 
-                <section className="mt-12" aria-label="Comments">
+                <section
+                  id="comments"
+                  className="mt-12 scroll-mt-28"
+                  aria-label="Comments"
+                >
                   <label htmlFor="commentText" className="text-brown-600">
                     Comment
                   </label>

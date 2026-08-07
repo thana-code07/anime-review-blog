@@ -10,6 +10,7 @@ import { AdminArticleFormPage } from "./pages/admin/AdminArticleFormPage";
 import { AdminArticlesPage } from "./pages/admin/AdminArticlesPage";
 import { AdminCategoriesPage } from "./pages/admin/AdminCategoriesPage";
 import { AdminCategoryFormPage } from "./pages/admin/AdminCategoryFormPage";
+import { AdminNotificationsPage } from "./pages/admin/AdminNotificationsPage";
 import { BlogPostPage } from "./pages/BlogPostPage";
 import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -48,6 +49,7 @@ function App() {
             element={<AdminCategoryFormPage />}
           />
           <Route path="categories" element={<AdminCategoriesPage />} />
+          <Route path="notifications" element={<AdminNotificationsPage />} />
           <Route element={<AdminCenteredFormLayout />}>
             <Route path="profile" element={<ProfilePage />} />
             <Route path="reset-password" element={<ResetPasswordPage />} />
